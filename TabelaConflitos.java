@@ -3,12 +3,12 @@ public class TabelaConflitos {
     // Definindo a matriz de compatibilidade como static final
     private static final boolean[][] MATRIZ_CONFLITOS = {
         // LEITURA  ESCRITA  CERTIFY  INT_LEIT  INT_ESCR  INT_CERT
-        {  true ,   true ,   false ,   true ,   false ,   false },  // LEITURA
-        {  true ,  false ,   false ,   true ,    true ,   false },  // ESCRITA
-        { false ,  false ,    true ,  false ,   false ,    true },  // CERTIFY
-        {  true ,   true ,   false ,   true ,   false ,   false },  // INTENCIONAL_LEITURA
-        { false ,   true ,   false ,  false ,    true ,   false },  // INTENCIONAL_ESCRITA
-        { false ,  false ,    true ,  false ,   false ,    true },  // INTENCIONAL_CERTIFY
+        {  true ,   true ,   false ,   true ,   true ,    false },  // LEITURA
+        {  true ,  false ,   false ,   true ,   false ,   false },  // ESCRITA
+        { false ,  false ,    true ,   false,   false ,    true },  // CERTIFY
+        {  true ,   true ,   false ,   true ,   true ,     true },  // INTENCIONAL_LEITURA
+        {  true ,  false ,   false ,   true ,   true ,     true },  // INTENCIONAL_ESCRITA
+        { false ,  false ,   false ,   true ,   true ,     true },  // INTENCIONAL_CERTIFY
     };
 
     // Método para verificar se dois tipos de bloqueio são compatíveis
