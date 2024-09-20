@@ -55,6 +55,9 @@ class Protocolo2V2PL implements Protocolo {
     LinkedList<Operacao>      OperacoesRestantes;
     HashMap<Integer,Integer>  GrafoWaitFor;
 
+    //Melhor segmentar em transações mesmo, quanto uma espera pelo bloqueio da outra skipar
+    //Ou talvez verificar se está no grafo wait for
+
     //Observer para relatar eventos da execução do algoritmo
 
     public void rodar(LinkedList<Operacao> OperacoesEmOrdemCronologica){
@@ -65,6 +68,11 @@ class Protocolo2V2PL implements Protocolo {
         while(!OperacoesEmOrdemCronologica.isEmpty()){
 
             Operacao operacao = OperacoesEmOrdemCronologica.pop();
+
+            Boolean  TransacaoEsperandoOutra = GrafoWaitFor.keySet().contains(operacao.transaction);
+
+            //Verifica se está no grafo waitfor, se estiver skippa
+            if(TransacaoEsperandoOutra) continue;
 
             //Tenta rodar operação, se não for sucesso então coloca nas operações restantes   
             if(rodarOperacao(operacao)){
@@ -126,7 +134,7 @@ class Protocolo2V2PL implements Protocolo {
         //Pegar registro referido da operação
         Registro registro = operacao.registro;
     
-        if(TabelaConflitos.bloqueioDisponivel(operacao, registro.bloqueio)){
+        if(TabelaConflitos.podeConcederBloqueio(registro.bloqueio, operacao)){
             registro.bloqueio = TabelaConflitos.getBloqueio(operacao);
 
             return true;
@@ -136,6 +144,7 @@ class Protocolo2V2PL implements Protocolo {
         
         //Senão botar transação em espera no grafo wait for 
         GrafoWaitFor.put(operacao.transaction, transaction);
+
         //Detectar Deadlock
         if(detectarDeadlock()) abortarTransaction(operacao.transaction);
 
@@ -170,7 +179,7 @@ class Protocolo2V2PL implements Protocolo {
         for(Operacao operacao : Transaction){
 
             Registro registro = operacao.registro;
-            Tupla    tupla    = registro.tupla;
+            Pagina    tupla    = registro.tupla;
             Tabela   tabela   = tupla.tabela;
 
             if(registro.bloqueio.getTransaction() == transaction){

@@ -1,14 +1,20 @@
 public class Bloqueio {
 
-    public enum TipoBloqueio {
-        COMPARTILHADO, EXCLUSIVO, INTENCIONAL_LEITURA, INTENCIONAL_ESCRITA, INTENCIONAL_ATUALIZACAO
+    public enum type {
+        LEITURA, 
+        ESCRITA, 
+        CERTIFY, 
+        INTENCIONAL_LEITURA, 
+        INTENCIONAL_ESCRITA, 
+        INTENCIONAL_CERTIFY
     }
 
-    public TipoBloqueio tipoBloqueio;
+    public type tipoBloqueio;
+    
     private Integer transactionId;
 
     // Construtor
-    public Bloqueio(TipoBloqueio tipoBloqueio) {
+    public Bloqueio(type tipoBloqueio) {
         this.tipoBloqueio = tipoBloqueio;
     }
 

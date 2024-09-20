@@ -20,16 +20,13 @@ public abstract class Operacao{
     }
 
     // Propriedade para armazenar o tipo da operação
-    public TipoOperacao tipoOperacao;
+    public type tipoOperacao;
 
     // Enum para definir os tipos de operação
-    public enum TipoOperacao {
+    public enum type {
         READ,
         WRITE,
-        UPDATE,
-        INTENTIONAL_READ,
-        INTENTIONAL_WRITE,
-        INTENTIONAL_UPDATE,
+        // UPDATE,
         COMMIT,
         ABORT
     }
@@ -38,7 +35,7 @@ class Read extends Operacao {
     
     public Read(Integer transaction, Registro registro) {
         super(transaction, registro);
-        tipoOperacao = TipoOperacao.READ;
+        tipoOperacao = type.READ;
     }
 }
 
@@ -46,47 +43,23 @@ class Write extends Operacao {
     
     public Write(Integer transaction, Registro registro) {
         super(transaction, registro);
-        tipoOperacao = TipoOperacao.WRITE;
+        tipoOperacao = type.WRITE;
     }
 }
 
-class Update extends Operacao {
+// class Update extends Operacao {
     
-    public Update(Integer transaction, Registro registro) {
-        super(transaction, registro);
-        tipoOperacao = TipoOperacao.UPDATE;
-    }
-}
-
-class IntentionalRead extends Operacao {
-    
-    public IntentionalRead(Integer transaction, Registro registro) {
-        super(transaction, registro);
-        tipoOperacao = TipoOperacao.INTENTIONAL_READ;
-    }
-}
-
-class IntentionalWrite extends Operacao {
-    
-    public IntentionalWrite(Integer transaction, Registro registro) {
-        super(transaction, registro);
-        tipoOperacao = TipoOperacao.INTENTIONAL_WRITE;
-    }
-}
-
-class IntentionalUpdate extends Operacao {
-    
-    public IntentionalUpdate(Integer transaction, Registro registro) {
-        super(transaction, registro);
-        tipoOperacao = TipoOperacao.INTENTIONAL_UPDATE;
-    }
-}
+//     public Update(Integer transaction, Registro registro) {
+//         super(transaction, registro);
+//         tipoOperacao = type.UPDATE;
+//     }
+// }
 
 class Commit extends Operacao {
     
     public Commit(Integer transaction) {
         super(transaction, null);
-        tipoOperacao = TipoOperacao.COMMIT;
+        tipoOperacao = type.COMMIT;
     }
 }
 
@@ -94,6 +67,6 @@ class Abort extends Operacao {
     
     public Abort(Integer transaction) {
         super(transaction, null);
-        tipoOperacao = TipoOperacao.ABORT;
+        tipoOperacao = type.ABORT;
     }
 }

@@ -1,12 +1,16 @@
 import java.util.ArrayList;
 
 interface Data{
+
     boolean temBloqueio(Operacao operacao);
+
+    boolean propagarBloqueioIntecional(Bloqueio bloqueio);
+
 }
 
 public class Tabela implements Data{
 
-    ArrayList<Tupla> tuplas;
+    ArrayList<Pagina> tuplas;
     Bloqueio         bloqueio;
 
     public boolean temBloqueio(Operacao operacao){
@@ -16,12 +20,22 @@ public class Tabela implements Data{
         return true;
     }
 
-    public void propagarBloqueio(Bloqueio bloqueio) {
-        this.bloqueio = bloqueio;
+    public boolean propagarBloqueioIntecional(Bloqueio bloqueio) {
+        
+        if(this.bloqueio == null){
+
+            this.bloqueio = bloqueio;
+
+            return true;
+        }
+
+        //if bloqueio compatível usando tabela conflitos
+
+        return false;
     }
 }
 
-class Tupla implements Data{
+class Pagina implements Data{
 
     Tabela              tabela;
     ArrayList<Registro> registros;
@@ -35,9 +49,18 @@ class Tupla implements Data{
         return true;
     }
 
-    public void propagarBloqueio(Bloqueio bloqueio) {
-        this.bloqueio = bloqueio;
-        tabela.propagarBloqueio(bloqueio);
+    public boolean propagarBloqueioIntecional(Bloqueio bloqueio) {
+        
+        if(this.bloqueio == null){
+
+            this.bloqueio = bloqueio;
+
+            return true;
+        }
+
+        //if bloqueio compatível usando tabela conflitos
+
+        return false;
     }
 }
 
@@ -45,7 +68,7 @@ class Tupla implements Data{
 class Registro implements Data{
     String   Nome;
     Integer  valor;
-    Tupla    tupla;
+    Pagina    tupla;
     Bloqueio bloqueio;
 
     public boolean temBloqueio(Operacao operacao){
@@ -55,9 +78,17 @@ class Registro implements Data{
         return true;
     }
 
-    //Propaga bloqueios intecionais;
-    public void propagarBloqueio(Bloqueio bloqueio) {
+    public boolean propagarBloqueioIntecional(Bloqueio bloqueio) {
+        
+        if(this.bloqueio == null){
 
-        tupla.propagarBloqueio(bloqueio);
+            this.bloqueio = bloqueio;
+
+            return true;
+        }
+
+        //if bloqueio compatível usando tabela conflitos
+
+        return false;
     }
 }
