@@ -1,6 +1,7 @@
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -47,13 +48,21 @@ interface Protocolo {
 **/
 class Protocolo2V2PL implements Protocolo {
 
-    //Detecção de conflitos -> grafo de serialização
-    //Detecção de deadlock -> grafo de wait-for
-    //Inserir uma operação: verificar conflitos, se não houver escalona e 
-
+    //Inserir uma operação: verificar conflitos, se não houver escalona, 
+    //se houver coloca nas operações restantes
     LinkedList<Operacao>      Escalonamento;
     LinkedList<Operacao>      OperacoesRestantes;
+
+    //Detecção de conflitos -> grafo de serialização
+    //Detecção de deadlock -> grafo de wait-for
     HashMap<Integer,Integer>  GrafoWaitFor;
+    ArrayList <Bloqueio>      BloqueiosAtivos;
+
+    //Parte da database e cópias de versão do 2v2pl
+    Database                  database;
+    HashMap<Integer,Data>     datacopies;
+    
+
 
     //Melhor segmentar em transações mesmo, quanto uma espera pelo bloqueio da outra skipar
     //Ou talvez verificar se está no grafo wait for
@@ -107,10 +116,87 @@ class Protocolo2V2PL implements Protocolo {
         }
     }
 
+    private boolean rodarOperacao(Write write){
+
+        Bloqueio bloqueioExistente = write.registro.bloqueio;
+
+        if(TabelaConflitos.podeConcederBloqueio(write)){
+            write.registro.bloqueio = TabelaConflitos.getBloqueio(write); //Talvez transformar em um setter dos registros
+
+            //Criar cópia do banco de dados -> create copy
+            this.criarCopia(write);
+
+            //Escalona wj(xn) -> parte do 2v2PL
+            Escalonamento.add(write);
+        }
+        else{
+            //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
+            Integer transaction = bloqueioExistente.getTransaction();
+            
+            //Senão botar transação em espera no grafo wait for 
+            GrafoWaitFor.put(write.transaction, transaction);
+
+            //Detectar Deadlock
+            // if(detectarDeadlock()) abortarTransaction(write.transaction);
+        }
+
+        return false;
+    }
+
+    private boolean rodarOperacao(Read read){
+
+        Registro registro = read.registro;
+
+        Bloqueio bloqueioExistente = registro.bloqueio;
+
+        if(TabelaConflitos.podeConcederBloqueio(read)){
+            registro.bloqueio = TabelaConflitos.getBloqueio(read); //Talvez transformar em um setter dos registros
+
+            //Escalona wj(xn) -> parte do 2v2PL
+
+            //Verifica se pertence a transação com a cópia do banco de dados
+
+            //Se a transação Tj possua wlj(x), executou wj(xn)
+            Data copia = datacopies.get(read.transaction);
+
+            
+            if(copia == null){
+                //Escalona rj(x)
+                Escalonamento.add(read);
+            }
+            else{
+                //Converte  rj(x) em rj(xn)
+                read.registro = copia.buscarRegistro(registro.nome);
+
+                //Escalona rj(xn)
+                Escalonamento.add(read);
+            }
+        }
+        else{
+            //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
+            Integer transaction = bloqueioExistente.getTransaction();
+            
+            //Senão botar transação em espera no grafo wait for 
+            GrafoWaitFor.put(read.transaction, transaction);
+
+            //Detectar Deadlock
+            // if(detectarDeadlock()) abortarTransaction(write.transaction);
+        }
+
+        //Ver como fazer essa parte depois
+        return false;
+    }
+
     //Caso de commit ou abort
     private boolean rodarOperacao(Commit commit){
 
-        liberarBloqueios(commit.transaction);
+        //Tenta converter todos wlj em clj
+        //Enquanto houver wlj(x) faça
+            //Se existir rlk(x), com 0<K<=n, k != j
+                //Aguarda a concessão de clj(x)
+            //Senão
+            //Concede o bloqueio clj(x)
+        //Escalona cj
 
         return true;
     }
@@ -134,7 +220,7 @@ class Protocolo2V2PL implements Protocolo {
         //Pegar registro referido da operação
         Registro registro = operacao.registro;
     
-        if(TabelaConflitos.podeConcederBloqueio(registro.bloqueio, operacao)){
+        if(TabelaConflitos.podeConcederBloqueio(operacao)){
             registro.bloqueio = TabelaConflitos.getBloqueio(operacao);
 
             return true;
@@ -179,15 +265,15 @@ class Protocolo2V2PL implements Protocolo {
         for(Operacao operacao : Transaction){
 
             Registro registro = operacao.registro;
-            Pagina    tupla    = registro.tupla;
-            Tabela   tabela   = tupla.tabela;
+            Pagina   pagina   = registro.pagina;
+            Tabela   tabela   = pagina.tabela;
 
             if(registro.bloqueio.getTransaction() == transaction){
                 registro.bloqueio = null;
             }
 
-            if(tupla.bloqueio.getTransaction() == transaction){
-                tupla.bloqueio = null;
+            if(pagina.bloqueio.getTransaction() == transaction){
+                pagina.bloqueio = null;
             }
 
             if(tabela.bloqueio.getTransaction() == transaction){
@@ -202,6 +288,41 @@ class Protocolo2V2PL implements Protocolo {
                                  entry.getValue().equals(transaction)
                     );
     }
+
+    private void criarCopia(Operacao operacao){
+
+        Integer transaction = operacao.transaction;
+
+
+        switch(operacao.escopoLock){
+            case rowlock: {
+                Data data = operacao.registro.clonar();
+                
+                datacopies.put(transaction, data);
+
+                break;
+            }
+
+            case pagelock: {
+                Data data = operacao.registro.pagina.clonar();
+
+                datacopies.put(transaction, data);
+
+                break;
+            }
+
+            case tablelock: {
+                Data data = operacao.registro.pagina.tabela.clonar();
+
+                datacopies.put(transaction, data);
+
+                break;
+            } 
+        }
+    }
+
+
+    //Detecção de deadlock
 
     private boolean detectarDeadlock() {
         // Realiza uma busca no grafo wait-for para detectar ciclos

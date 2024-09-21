@@ -33,6 +33,19 @@ public class TabelaConflitos {
         );
     }
 
+    public static boolean podeConcederBloqueio(
+        Operacao novaOperacao
+    ) {
+
+        Bloqueio bloqueioExistente = novaOperacao.registro.bloqueio;
+        Bloqueio novoBloqueio = getBloqueio(novaOperacao);
+
+        return podeConcederBloqueio(
+            bloqueioExistente.tipoBloqueio, 
+            novoBloqueio.tipoBloqueio
+        );
+    }
+
 
     // Método auxiliar para mapear uma operação ao tipo de bloqueio correspondente
     public static Bloqueio getBloqueio(Operacao operacao) {
