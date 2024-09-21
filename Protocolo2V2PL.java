@@ -60,7 +60,7 @@ class Protocolo2V2PL implements Protocolo {
 
     //Parte da database e cópias de versão do 2v2pl
     Database                  database;
-    HashMap<Integer,Data>     datacopies;
+    HashMap<Integer,Database> datacopies;
     
 
 
@@ -153,16 +153,16 @@ class Protocolo2V2PL implements Protocolo {
             //Verifica se pertence a transação com a cópia do banco de dados
 
             //Se a transação Tj possua wlj(x), executou wj(xn)
-            Data copia = datacopies.get(read.transaction);
+            Database copiaBD = datacopies.get(read.transaction);
 
             
-            if(copia == null){
+            if(copiaBD == null){
                 //Escalona rj(x)
                 Escalonamento.add(read);
             }
             else{
                 //Converte  rj(x) em rj(xn)
-                read.registro = copia.buscarRegistro(registro.nome);
+                read.registro = copiaBD.buscarRegistro(registro.nome);
 
                 //Escalona rj(xn)
                 return true;
@@ -186,13 +186,14 @@ class Protocolo2V2PL implements Protocolo {
     //Caso de commit ou abort
     private boolean rodarOperacao(Commit commit){
 
+        //Todos os writelocks desse commit
         List<Bloqueio> writelock    = BloqueiosAtivos.stream()
                                                      .filter(bloqueio -> bloqueio.tipo == Bloqueio.type.ESCRITA && 
                                                                          bloqueio.transaction == commit.transaction)
                                                      .toList();
 
+        //Todos os readlocks existentes no BD
         List<Bloqueio> readlock     = BloqueiosAtivos.stream().filter(bloqueio -> bloqueio.tipo == Bloqueio.type.LEITURA).toList();
-        // List<Bloqueio> certifylock  = BloqueiosAtivos.stream().filter(bloqueio -> bloqueio.tipo == Bloqueio.type.CERTIFY).toList();
 
         //Tenta converter todos wlj em clj
         //Enquanto houver wlj(x) faça
@@ -314,9 +315,11 @@ class Protocolo2V2PL implements Protocolo {
         Integer transaction = operacao.transaction;
 
 
+        //Cria uma cópia do banco de dados, melhor copiar ele todo pois é mais fácil de implementar
+        //Antes tentei fazer algo mais eficiente, mas é trabai dimar
         switch(operacao.escopoLock){
             case rowlock: {
-                Data data = operacao.registro.clonar();
+                Database data = (Database) database.clonar();
                 
                 datacopies.put(transaction, data);
 
@@ -324,7 +327,7 @@ class Protocolo2V2PL implements Protocolo {
             }
 
             case pagelock: {
-                Data data = operacao.registro.pagina.clonar();
+                Database data = (Database) database.clonar();
 
                 datacopies.put(transaction, data);
 
@@ -332,7 +335,7 @@ class Protocolo2V2PL implements Protocolo {
             }
 
             case tablelock: {
-                Data data = operacao.registro.pagina.tabela.clonar();
+                Database data = (Database) database.clonar();
 
                 datacopies.put(transaction, data);
 
