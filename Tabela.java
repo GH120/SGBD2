@@ -50,7 +50,7 @@ class Registro implements Data {
     String   nome;
     Integer  valor;
     Pagina   pagina;
-    Bloqueio bloqueio;
+    Bloqueio bloqueio; //Talvez transformar isso numa relação n para n
 
     public Registro(String nome, Integer valor) {
         this.nome = nome;
@@ -88,7 +88,7 @@ class Registro implements Data {
 class Composite implements Data{
 
     ArrayList<Data> nodes;
-    Bloqueio bloqueio;
+    Bloqueio bloqueio; //Talvez transformar isso numa relação n para n
 
     Composite(ArrayList<? extends Data> nodes){
 

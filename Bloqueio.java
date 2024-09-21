@@ -9,22 +9,25 @@ public class Bloqueio {
         INTENCIONAL_CERTIFY
     }
 
-    public type tipoBloqueio;
+    public type tipo;
     
-    private Integer transactionId;
+    public Integer transaction;
+
+    public Registro registro;
 
     // Construtor
-    public Bloqueio(type tipoBloqueio) {
-        this.tipoBloqueio = tipoBloqueio;
+    public Bloqueio(type tipoBloqueio, Registro data) {
+        this.tipo = tipoBloqueio;
+        this.registro = registro;
     }
 
     // Define o ID da transação que detém o bloqueio
     public void setTransaction(Integer transactionId) {
-        this.transactionId = transactionId;
+        this.transaction = transactionId;
     }
 
     // Retorna o ID da transação que detém o bloqueio
     public Integer getTransaction() {
-        return transactionId;
+        return transaction;
     }
 }

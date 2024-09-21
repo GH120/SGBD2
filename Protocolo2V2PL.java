@@ -84,7 +84,16 @@ class Protocolo2V2PL implements Protocolo {
             if(TransacaoEsperandoOutra) continue;
 
             //Tenta rodar operação, se não for sucesso então coloca nas operações restantes   
-            if(rodarOperacao(operacao)){
+            if     (operacao instanceof Write  && rodarOperacao((Write)operacao)){
+                Escalonamento.push(operacao);
+            }
+            else if(operacao instanceof Read   && rodarOperacao((Read)operacao)){
+                Escalonamento.push(operacao);
+            }
+            else if(operacao instanceof Commit && rodarOperacao((Commit)operacao)){
+                Escalonamento.push(operacao);
+            }
+            else if(operacao instanceof Abort  && rodarOperacao((Abort)operacao)){
                 Escalonamento.push(operacao);
             }
             else{
@@ -103,31 +112,18 @@ class Protocolo2V2PL implements Protocolo {
         }
     }
 
-    //Casos de inserção das operações
-    //Overloading de métodos para tratar cada caso (read,write,commit,abort)
-    private boolean rodarOperacao(Operacao operacao){
-
-        if(solicitarBloqueio(operacao)){
-            return true;
-        } 
-        else {
-            solucionarConflito(operacao);
-            return false;
-        }
-    }
-
     private boolean rodarOperacao(Write write){
 
         Bloqueio bloqueioExistente = write.registro.bloqueio;
 
         if(TabelaConflitos.podeConcederBloqueio(write)){
-            write.registro.bloqueio = TabelaConflitos.getBloqueio(write); //Talvez transformar em um setter dos registros
+            write.registro.bloqueio = TabelaConflitos.obterBloqueio(write); //Talvez transformar em um setter dos registros
 
             //Criar cópia do banco de dados -> create copy
             this.criarCopia(write);
 
             //Escalona wj(xn) -> parte do 2v2PL
-            Escalonamento.add(write);
+            return true;
         }
         else{
             //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
@@ -150,7 +146,7 @@ class Protocolo2V2PL implements Protocolo {
         Bloqueio bloqueioExistente = registro.bloqueio;
 
         if(TabelaConflitos.podeConcederBloqueio(read)){
-            registro.bloqueio = TabelaConflitos.getBloqueio(read); //Talvez transformar em um setter dos registros
+            registro.bloqueio = TabelaConflitos.obterBloqueio(read); //Talvez transformar em um setter dos registros
 
             //Escalona wj(xn) -> parte do 2v2PL
 
@@ -169,7 +165,7 @@ class Protocolo2V2PL implements Protocolo {
                 read.registro = copia.buscarRegistro(registro.nome);
 
                 //Escalona rj(xn)
-                Escalonamento.add(read);
+                return true;
             }
         }
         else{
@@ -190,14 +186,38 @@ class Protocolo2V2PL implements Protocolo {
     //Caso de commit ou abort
     private boolean rodarOperacao(Commit commit){
 
+        List<Bloqueio> writelock    = BloqueiosAtivos.stream()
+                                                     .filter(bloqueio -> bloqueio.tipo == Bloqueio.type.ESCRITA && 
+                                                                         bloqueio.transaction == commit.transaction)
+                                                     .toList();
+
+        List<Bloqueio> readlock     = BloqueiosAtivos.stream().filter(bloqueio -> bloqueio.tipo == Bloqueio.type.LEITURA).toList();
+        // List<Bloqueio> certifylock  = BloqueiosAtivos.stream().filter(bloqueio -> bloqueio.tipo == Bloqueio.type.CERTIFY).toList();
+
         //Tenta converter todos wlj em clj
         //Enquanto houver wlj(x) faça
-            //Se existir rlk(x), com 0<K<=n, k != j
-                //Aguarda a concessão de clj(x)
-            //Senão
-            //Concede o bloqueio clj(x)
-        //Escalona cj
+        for(var wlj : writelock){
 
+            Bloqueio rlk = readlock.stream()
+                                   .filter(rli -> rli.transaction != wlj.transaction && rli.registro.nome == wlj.registro.nome)
+                                   .findFirst()
+                                   .orElse(null);
+
+            //Se existir rlk(x), com 0<K<=n, k != j
+            if(rlk != null){
+                //Aguarda a concessão de clj(x)
+                GrafoWaitFor.put(commit.transaction, rlk.transaction);
+
+                return false;
+            }
+
+            else{
+                 //Concede o bloqueio clj(x)
+                  wlj.registro.bloqueio = TabelaConflitos.obterBloqueio(commit);
+            }
+        }
+            
+        //Escalona cj
         return true;
     }
 
@@ -221,7 +241,7 @@ class Protocolo2V2PL implements Protocolo {
         Registro registro = operacao.registro;
     
         if(TabelaConflitos.podeConcederBloqueio(operacao)){
-            registro.bloqueio = TabelaConflitos.getBloqueio(operacao);
+            registro.bloqueio = TabelaConflitos.obterBloqueio(operacao);
 
             return true;
         }

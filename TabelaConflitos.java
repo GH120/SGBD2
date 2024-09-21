@@ -25,11 +25,11 @@ public class TabelaConflitos {
         Operacao novaOperacao
     ) {
         
-        Bloqueio novoBloqueio = getBloqueio(novaOperacao);
+        Bloqueio novoBloqueio = obterBloqueio(novaOperacao);
 
         return podeConcederBloqueio(
-            bloqueioExistente.tipoBloqueio, 
-            novoBloqueio.tipoBloqueio
+            bloqueioExistente.tipo, 
+            novoBloqueio.tipo
         );
     }
 
@@ -38,25 +38,25 @@ public class TabelaConflitos {
     ) {
 
         Bloqueio bloqueioExistente = novaOperacao.registro.bloqueio;
-        Bloqueio novoBloqueio = getBloqueio(novaOperacao);
+        Bloqueio novoBloqueio = obterBloqueio(novaOperacao);
 
         return podeConcederBloqueio(
-            bloqueioExistente.tipoBloqueio, 
-            novoBloqueio.tipoBloqueio
+            bloqueioExistente.tipo, 
+            novoBloqueio.tipo
         );
     }
 
 
     // Método auxiliar para mapear uma operação ao tipo de bloqueio correspondente
-    public static Bloqueio getBloqueio(Operacao operacao) {
+    public static Bloqueio obterBloqueio(Operacao operacao) {
 
         switch (operacao.tipoOperacao) {
             case READ:
-                return new Bloqueio(Bloqueio.type.LEITURA);
+                return new Bloqueio(Bloqueio.type.LEITURA, operacao.registro);
             case WRITE:
-                return new Bloqueio(Bloqueio.type.ESCRITA);
+                return new Bloqueio(Bloqueio.type.ESCRITA, operacao.registro);
             case COMMIT:
-                return new Bloqueio(Bloqueio.type.CERTIFY);
+                return new Bloqueio(Bloqueio.type.CERTIFY, operacao.registro);
             default:
                 throw new IllegalArgumentException("Tipo de operação desconhecido.");
         }
