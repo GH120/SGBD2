@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class TabelaConflitos {
 
     // Definindo a matriz de compatibilidade como static final
@@ -48,6 +51,16 @@ public class TabelaConflitos {
             bloqueioExistente.tipo, 
             novoBloqueio.tipo
         );
+    }
+
+    public static boolean podeConcederBloqueio(
+        Operacao novaOperacao,
+        List<Bloqueio> bloqueios
+    ) {
+
+        if(bloqueios.size() == 0) return true;
+
+        return bloqueios.stream().allMatch(bloqueio -> podeConcederBloqueio(bloqueio, novaOperacao));
     }
 
 

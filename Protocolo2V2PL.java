@@ -60,6 +60,9 @@ class Protocolo2V2PL implements Protocolo {
             }
             else if(operacao instanceof Commit && rodarOperacao((Commit)operacao)){
                 Escalonamento.push(operacao);
+
+                //Liberar bloqueios e sincronizar cópias
+                liberarBloqueios(operacao.transaction); //Libera os bloqueios do commit
             }
             else if(operacao instanceof Abort  && rodarOperacao((Abort)operacao)){
                 Escalonamento.push(operacao);
@@ -84,12 +87,15 @@ class Protocolo2V2PL implements Protocolo {
 
     private boolean rodarOperacao(Write write){
 
-        Bloqueio bloqueioExistente = write.registro.bloqueio;
+        Registro registro = write.registro;
 
-        if(TabelaConflitos.podeConcederBloqueio(write)){
-            write.registro.bloqueio = TabelaConflitos.obterBloqueio(write); //Talvez transformar em um setter dos registros
+        List<Bloqueio> bloqueios = BloqueiosAtivos.stream().filter(b -> b.registro == registro).toList();
 
-            BloqueiosAtivos.add(write.registro.bloqueio);
+        if(TabelaConflitos.podeConcederBloqueio(write, bloqueios)){
+
+            Bloqueio bloqueio = TabelaConflitos.obterBloqueio(write); //Talvez transformar em um setter dos registros
+
+            BloqueiosAtivos.add(bloqueio);
 
             //Faltou tratar o caso em que já existe uma cópia do banco de dados
 
@@ -100,13 +106,19 @@ class Protocolo2V2PL implements Protocolo {
             return true;
         }
         else{
-            //Não pode conceder bloqueio
-            Integer transaction = bloqueioExistente.getTransaction();
-            
-            GrafoWaitFor.put(write.transaction, transaction);
 
-            //Detectar Deadlock
-            // if(detectarDeadlock()) abortarTransaction(write.transaction);
+            bloqueios
+            .stream()
+            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(Bloqueio.type.ESCRITA, bloqueio.tipo))
+            .forEach(bloqueioIncompativel -> {
+
+                //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
+                Integer transaction = bloqueioIncompativel.getTransaction();
+                
+                //Senão botar transação em espera no grafo wait for 
+                GrafoWaitFor.put(write.transaction, transaction);
+
+            });
         }
 
         return false;
@@ -116,12 +128,13 @@ class Protocolo2V2PL implements Protocolo {
 
         Registro registro = read.registro;
 
-        Bloqueio bloqueioExistente = registro.bloqueio;
+        List<Bloqueio> bloqueios = BloqueiosAtivos.stream().filter(b -> b.registro == registro).toList();
 
-        if(TabelaConflitos.podeConcederBloqueio(read)){
-            registro.bloqueio = TabelaConflitos.obterBloqueio(read); //Talvez transformar em um setter dos registros
+        if(TabelaConflitos.podeConcederBloqueio(read, bloqueios)){
+            
+            Bloqueio bloqueio = TabelaConflitos.obterBloqueio(read); //Talvez transformar em um setter dos registros
 
-            BloqueiosAtivos.add(registro.bloqueio);
+            BloqueiosAtivos.add(bloqueio);
 
             //Escalona wj(xn) -> parte do 2v2PL
 
@@ -144,11 +157,19 @@ class Protocolo2V2PL implements Protocolo {
             }
         }
         else{
-            //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
-            Integer transaction = bloqueioExistente.getTransaction();
-            
-            //Senão botar transação em espera no grafo wait for 
-            GrafoWaitFor.put(read.transaction, transaction);
+
+            bloqueios
+            .stream()
+            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(Bloqueio.type.LEITURA, bloqueio.tipo))
+            .forEach(bloqueioIncompativel -> {
+
+                //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
+                Integer transaction = bloqueioIncompativel.getTransaction();
+                
+                //Senão botar transação em espera no grafo wait for 
+                GrafoWaitFor.put(read.transaction, transaction);
+
+            });
 
             //Detectar Deadlock
             // if(detectarDeadlock()) abortarTransaction(write.transaction);
@@ -189,7 +210,9 @@ class Protocolo2V2PL implements Protocolo {
 
             else{
                  //Concede o bloqueio clj(x)
-                  wlj.registro.bloqueio = TabelaConflitos.obterBloqueio(commit);
+                  Bloqueio bloqueio = TabelaConflitos.obterBloqueio(commit);
+
+                  BloqueiosAtivos.add(bloqueio);
             }
         }
             
@@ -231,36 +254,15 @@ class Protocolo2V2PL implements Protocolo {
 
     private void liberarBloqueios(Integer transaction){
         // liberar bloqueios da transação
-        List<Operacao> Transaction = Escalonamento
-                                         .stream()
-                                         .filter(o -> o.transaction == transaction && !(o instanceof Abort || o instanceof Commit))
-                                         .toList();
 
-        for(Operacao operacao : Transaction){
+        BloqueiosAtivos.removeIf(bloqueio -> bloqueio.transaction == transaction);
 
-            Registro registro = operacao.registro;
-            Pagina   pagina   = registro.pagina;
-            Tabela   tabela   = pagina.tabela;
-
-            if(registro.bloqueio.getTransaction() == transaction){
-                registro.bloqueio = null;
-            }
-
-            if(pagina.bloqueio.getTransaction() == transaction){
-                pagina.bloqueio = null;
-            }
-
-            if(tabela.bloqueio.getTransaction() == transaction){
-                tabela.bloqueio = null;
-            }
-         }
-
-         // Remove aresta do grafo wait for com essa transação
-         GrafoWaitFor.entrySet()
-                     .removeIf(
-                        entry -> entry.getKey().equals(transaction) || 
-                                 entry.getValue().equals(transaction)
-                    );
+        // Remove aresta do grafo wait for com essa transação
+        GrafoWaitFor.entrySet()
+                    .removeIf(
+                    entry -> entry.getKey().equals(transaction) || 
+                                entry.getValue().equals(transaction)
+                );
     }
 
     private void criarCopia(Operacao operacao){
