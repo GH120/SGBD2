@@ -47,35 +47,37 @@ class Protocolo2V2PL implements Protocolo {
 
             Boolean  TransacaoEsperandoOutra = GrafoWaitFor.keySet().contains(operacao.transaction);
 
-            //Verifica se está no grafo waitfor, se estiver skippa
-            if(TransacaoEsperandoOutra) continue;
+            //Verifica se está no grafo waitfor, esperando liberar outra transação, se estiver skippa
+            if(TransacaoEsperandoOutra);
 
             //TRATATAMENTO DE OPERAÇÕES//
-            //Tenta rodar operação, se não for sucesso então coloca nas operações restantes   
-            if     (operacao instanceof Write  && rodarOperacao((Write)operacao)){
-                escalonarOperacao(operacao);
-            }
-            else if(operacao instanceof Read   && rodarOperacao((Read)operacao)){
-                escalonarOperacao(operacao);
-            }
-            else if(operacao instanceof Commit && rodarOperacao((Commit)operacao)){
-                escalonarOperacao(operacao);
-                //Liberar bloqueios e sincronizar cópias
-                liberarBloqueios(operacao.transaction); //Libera os bloqueios do commit
-            }
-            else if(operacao instanceof Abort){
-                escalonarOperacao(operacao);
-
-                abortarTransaction(operacao.transaction);
-            }
             else{
-                OperacoesRestantes.push(operacao);
+
+                //Tenta rodar operação, se não for sucesso então coloca nas operações restantes   
+                if     (operacao instanceof Write  && rodarOperacao((Write)operacao)){
+                    escalonarOperacao(operacao);
+                }
+                else if(operacao instanceof Read   && rodarOperacao((Read)operacao)){
+                    escalonarOperacao(operacao);
+                }
+                else if(operacao instanceof Commit && rodarOperacao((Commit)operacao)){
+                    escalonarOperacao(operacao);
+                    //Liberar bloqueios e sincronizar cópias
+                    liberarBloqueios(operacao.transaction); //Libera os bloqueios do commit
+                }
+                else if(operacao instanceof Abort){
+                    escalonarOperacao(operacao);
+
+                    abortarTransaction(operacao.transaction);
+                }
+                else{
+                    OperacoesRestantes.push(operacao);
+                }
             }
 
             //DETECÇÃO DE DEADLOCKS//
             if(detectarDeadlock()) {
                 solucionarDeadlock(operacao);
-                break;
             }
 
             //Se terminar as operações em ordem cronológica, 
@@ -249,11 +251,15 @@ class Protocolo2V2PL implements Protocolo {
         Integer otherTransaction = GrafoWaitFor.get(transaction);
 
         //Abortar a transação mais recente
-        Integer transacaoAbortada = (OrdemInsercaoTransacoes.indexOf(transaction) < 
+        Integer transacaoAbortada = (OrdemInsercaoTransacoes.indexOf(transaction) > 
                                      OrdemInsercaoTransacoes.indexOf(otherTransaction))? 
                                      transaction : otherTransaction;
 
         abortarTransaction(transacaoAbortada);
+
+        //Tenta realizar a operação de novo se não for a transação abortada
+        if(transacaoAbortada != transaction) 
+            OperacoesRestantes.add(operacao);
 
         return false;
     }
@@ -261,7 +267,8 @@ class Protocolo2V2PL implements Protocolo {
     //Se receber comando para abortar, ou se houver um deadlock
     private void abortarTransaction(Integer transaction){
 
-        //Reverter as alterações da transação  TODO
+        //Reverter as alterações da transação -> não precisa, pois não foram comitadas, podemos até retirar a copia do BD
+        datacopies.remove(transaction);
 
         // liberar seus bloqueios
         liberarBloqueios(transaction);
