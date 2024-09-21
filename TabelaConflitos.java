@@ -24,6 +24,8 @@ public class TabelaConflitos {
         Bloqueio bloqueioExistente, 
         Operacao novaOperacao
     ) {
+
+        if(bloqueioExistente == null) return true;
         
         Bloqueio novoBloqueio = obterBloqueio(novaOperacao);
 
@@ -39,6 +41,8 @@ public class TabelaConflitos {
 
         Bloqueio bloqueioExistente = novaOperacao.registro.bloqueio;
         Bloqueio novoBloqueio = obterBloqueio(novaOperacao);
+
+        if(bloqueioExistente == null) return true;
 
         return podeConcederBloqueio(
             bloqueioExistente.tipo, 

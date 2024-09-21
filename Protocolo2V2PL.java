@@ -124,7 +124,7 @@ class Protocolo2V2PL implements Protocolo {
             
             if(copiaBD == null){
                 //Escalona rj(x)
-                Escalonamento.add(read);
+                return true;
             }
             else{
                 //Converte  rj(x) em rj(xn)
