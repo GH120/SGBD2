@@ -12,40 +12,6 @@ interface Protocolo {
     void rodar(LinkedList<Operacao> OperacoesEmOrdemCronologica);
 }
 
-/**
- * 1. Scheduler recebe wj(x)
-    Tenta obter wlj(x)
-    Se existe wlk(x) ou clk(x), então
-        Aguarda a concessão de wlj(x) e não
-        escalona wj(x)
-    Senão
-        Concede o bloqueio wlj(x)
-        Converte wj(x) em wj(xn)
-        Escalona wj(xn)
-
-2. Scheduler recebe rj(x)
-    Tenta obter rlj(x)
-    Se existe clk(x), então
-        Aguarda a concessão de rlj(x) e não
-        escalona rj(x)
-    Senão
-        Concede o bloqueio rlj(x)
-    Se Tj possuía wlj(x) // executou wj(xn)
-        Converte rj(x) em rj(xn)
-        Escalona rj(xn)
-    Senão
-        Escalona rj(x)
-
- 3. Scheduler recebe a operação cj
-// Tenta Converter todos wlj em clj
-    Enquanto houver wlj(x), faça
-        Se existir rlk(x), com 0<K≤n. k ≠ j
-            Aguarda a concessão de clj(x)
-        Senão
-        Concede o bloqueio clj(x)
-    Fim-enquanto
-    Escalona cj
-**/
 class Protocolo2V2PL implements Protocolo {
 
     //Inserir uma operação: verificar conflitos, se não houver escalona, 

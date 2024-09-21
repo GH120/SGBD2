@@ -41,14 +41,17 @@ abstract class Composite extends Data{
         if (condition.test(this)) return this;
 
         else return  nodes.stream()
-                          .filter(condition)
+                          .map(node -> node.buscar(condition))
+                          .filter(node -> node != null)
                           .findFirst()
                           .orElse(null);
     }
 
     public Registro buscarRegistro(String nome){
 
-        return (Registro) buscar(x -> x instanceof Registro && ((Registro) x).nome.equals(nome));
+        Data registro = buscar(x -> x instanceof Registro && ((Registro) x).nome.equals(nome));
+
+        return (Registro) registro;
     }
 }
 

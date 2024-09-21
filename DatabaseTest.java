@@ -73,7 +73,7 @@ public class DatabaseTest {
         paginas.add(pagina);
 
         // Clonar a Tabela
-        Tabela clonedTabela = (Tabela) tabela.clonar();
+        Tabela clonedTabela = tabela.clonar();
 
         // Assert que a Tabela clonada é uma instância diferente
         Assert.assertNotSame(tabela, clonedTabela);
