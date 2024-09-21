@@ -18,10 +18,12 @@ class Protocolo2V2PL implements Protocolo {
     //se houver coloca nas operações restantes
     LinkedList<Operacao>      Escalonamento;
     LinkedList<Operacao>      OperacoesRestantes;
+    LinkedList<Operacao>      OperacoesEmOrdemCronologica = new LinkedList();
 
     //Detecção de conflitos -> grafo de serialização
     //Detecção de deadlock -> grafo de wait-for
     HashMap<Integer,Integer>  GrafoWaitFor;
+    ArrayList<Integer>        OrdemInsercaoTransacoes = new ArrayList<>();
     ArrayList <Bloqueio>      BloqueiosAtivos;
 
     //Parte da database e cópias de versão do 2v2pl
@@ -35,7 +37,9 @@ class Protocolo2V2PL implements Protocolo {
 
     //Observer para relatar eventos da execução do algoritmo
 
-    public void rodar(LinkedList<Operacao> OperacoesEmOrdemCronologica){
+    public void rodar(LinkedList<Operacao> scheduleRecebido){
+
+        OperacoesEmOrdemCronologica = scheduleRecebido;
 
         while(!OperacoesEmOrdemCronologica.isEmpty()){
 
@@ -43,32 +47,35 @@ class Protocolo2V2PL implements Protocolo {
 
             Boolean  TransacaoEsperandoOutra = GrafoWaitFor.keySet().contains(operacao.transaction);
 
-            if(detectarDeadlock()) {
-                System.out.println("Deadlock");
-                break;
-            }
-
             //Verifica se está no grafo waitfor, se estiver skippa
             if(TransacaoEsperandoOutra) continue;
 
+            //TRATATAMENTO DE OPERAÇÕES//
             //Tenta rodar operação, se não for sucesso então coloca nas operações restantes   
             if     (operacao instanceof Write  && rodarOperacao((Write)operacao)){
-                Escalonamento.push(operacao);
+                escalonarOperacao(operacao);
             }
             else if(operacao instanceof Read   && rodarOperacao((Read)operacao)){
-                Escalonamento.push(operacao);
+                escalonarOperacao(operacao);
             }
             else if(operacao instanceof Commit && rodarOperacao((Commit)operacao)){
-                Escalonamento.push(operacao);
-
+                escalonarOperacao(operacao);
                 //Liberar bloqueios e sincronizar cópias
                 liberarBloqueios(operacao.transaction); //Libera os bloqueios do commit
             }
-            else if(operacao instanceof Abort  && rodarOperacao((Abort)operacao)){
-                Escalonamento.push(operacao);
+            else if(operacao instanceof Abort){
+                escalonarOperacao(operacao);
+
+                abortarTransaction(operacao.transaction);
             }
             else{
                 OperacoesRestantes.push(operacao);
+            }
+
+            //DETECÇÃO DE DEADLOCKS//
+            if(detectarDeadlock()) {
+                solucionarDeadlock(operacao);
+                break;
             }
 
             //Se terminar as operações em ordem cronológica, 
@@ -82,7 +89,6 @@ class Protocolo2V2PL implements Protocolo {
 
         }
 
-        Collections.reverse(Escalonamento);
     }
 
     private boolean rodarOperacao(Write write){
@@ -97,10 +103,17 @@ class Protocolo2V2PL implements Protocolo {
 
             BloqueiosAtivos.add(bloqueio);
 
-            //Faltou tratar o caso em que já existe uma cópia do banco de dados
+            //Se a transação Tj possua wlj(x), executou wj(xn)
+            Database copiaBD = datacopies.get(write.transaction);
 
-            //Criar cópia do banco de dados -> create copy
-            this.criarCopia(write);
+            if(copiaBD == null){ 
+                //Criar cópia do banco de dados -> create copy
+                this.criarCopia(write);
+            }
+            else{
+                //Converte  rj(x) em rj(xn)
+                write.registro = copiaBD.buscarRegistro(registro.nome);
+            }
 
             //Escalona wj(xn) -> parte do 2v2PL
             return true;
@@ -170,9 +183,6 @@ class Protocolo2V2PL implements Protocolo {
                 GrafoWaitFor.put(read.transaction, transaction);
 
             });
-
-            //Detectar Deadlock
-            // if(detectarDeadlock()) abortarTransaction(write.transaction);
         }
 
         //Ver como fazer essa parte depois
@@ -220,21 +230,30 @@ class Protocolo2V2PL implements Protocolo {
         return true;
     }
 
-    private boolean rodarOperacao(Abort abort){
 
-        // liberar bloqueios da operação
-        // Reverter todas as modificações
-        liberarBloqueios(abort.transaction);
-        abortarTransaction(abort.transaction);
+    private void escalonarOperacao(Operacao operacao){
+        Escalonamento.add(operacao);
 
-        return true;
-
+        //Se for a primeira operação da transação a ser escalonada, adiciona ela na ordem das transações
+        //Útil para saber quem a transação mais nova a ser abortada no deadlock
+        if(!OrdemInsercaoTransacoes.contains(operacao.transaction)) 
+            OrdemInsercaoTransacoes.add(operacao.transaction);
     }
-
 
     //Lógica de solicitar bloqueio, solucionar conflito, resolver deadlock...
 
-    private boolean solucionarConflito(Operacao operacao){
+    private boolean solucionarDeadlock(Operacao operacao){
+
+        //Obter as transações em Deadlock
+        Integer transaction      = operacao.transaction;
+        Integer otherTransaction = GrafoWaitFor.get(transaction);
+
+        //Abortar a transação mais recente
+        Integer transacaoAbortada = (OrdemInsercaoTransacoes.indexOf(transaction) < 
+                                     OrdemInsercaoTransacoes.indexOf(otherTransaction))? 
+                                     transaction : otherTransaction;
+
+        abortarTransaction(transacaoAbortada);
 
         return false;
     }
@@ -242,11 +261,17 @@ class Protocolo2V2PL implements Protocolo {
     //Se receber comando para abortar, ou se houver um deadlock
     private void abortarTransaction(Integer transaction){
 
-        // Reverter as alterações da transação e liberar seus bloqueios
+        //Reverter as alterações da transação  TODO
+
+        // liberar seus bloqueios
         liberarBloqueios(transaction);
 
         // Remover todas as dependências no grafo wait-for
         GrafoWaitFor.entrySet().removeIf(entry -> entry.getKey().equals(transaction) || entry.getValue().equals(transaction));
+
+        // Retirar todas as Operações da Transação
+        OperacoesRestantes         .removeIf(operacao -> operacao.transaction == transaction);
+        OperacoesEmOrdemCronologica.removeIf(operacao -> operacao.transaction == transaction);
 
         System.out.println("Transação " + transaction + " abortada devido a deadlock.");
 

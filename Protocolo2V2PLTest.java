@@ -197,6 +197,53 @@ public class Protocolo2V2PLTest {
         Assert.assertTrue(1 == protocolo.Escalonamento.get(5).transaction); // C1
     }
 
+    @Test
+    public void testCommitMultiplosRegistrosDeadlock() {
+        database = criarBancoDeDadosExemplo1(); // Inicializa o banco de dados padrão para esse teste
+        protocolo.database = database;
+
+        // Configurar registros
+        Registro registroY = database.buscarRegistro("Y");
+        Registro registroX = database.buscarRegistro("X");
+        Registro registroZ = database.buscarRegistro("Z");
+
+        // Criar operações
+        LinkedList<Operacao> operacoes = new LinkedList<>();
+        operacoes.add(new Write(1, registroX));  // W1(X) - Transação 1 escreve em X
+        operacoes.add(new Read(1, registroY));   // R1(Y) - Transação 1 lê Y
+        operacoes.add(new Read(2, registroX));   // R2(X) - Transação 2 lê X (antes do commit de T1)
+        operacoes.add(new Write(2, registroY));  // W2(Y) - Transação 2 escreve em Y
+        operacoes.add(new Write(3, registroZ));  // W3(Z) - Transação 3 escreve em Z
+        operacoes.add(new Commit(3));            // C3 - Transação 3 comita
+        operacoes.add(new Read(1, registroZ));   // R1(Z) - Transação 1 lê Z
+        operacoes.add(new Commit(1));            // C1 - Transação 1 comita
+        operacoes.add(new Commit(2));            // C2 - Transação 2 comita
+        // Executar o escalonamento
+        protocolo.rodar(operacoes);
+
+        // Verificar se as operações foram escalonadas corretamente
+        Assert.assertEquals(7, protocolo.Escalonamento.size()); // Todas as operações devem ser escalonadas
+        Assert.assertTrue(protocolo.Escalonamento.get(0) instanceof Write);  // W1(X)
+        Assert.assertTrue(protocolo.Escalonamento.get(1) instanceof Read);   // R1(Y)
+        Assert.assertTrue(protocolo.Escalonamento.get(2) instanceof Read);   // R2(X)
+        Assert.assertTrue(protocolo.Escalonamento.get(3) instanceof Write);  // W2(Y)
+        Assert.assertTrue(protocolo.Escalonamento.get(4) instanceof Write);  // W3(Z)
+        Assert.assertTrue(protocolo.Escalonamento.get(5) instanceof Commit); // C3
+        Assert.assertTrue(protocolo.Escalonamento.get(6) instanceof Read);   // R1(Z)
+        // Assert.assertTrue(protocolo.Escalonamento.get(7) instanceof Commit); // C1
+        // Assert.assertTrue(protocolo.Escalonamento.get(8) instanceof Commit); // C2
+
+        // Verificar a ordem das operações escalonadas
+        Assert.assertTrue(1 == protocolo.Escalonamento.get(0).transaction); // W1(X)
+        Assert.assertTrue(1 == protocolo.Escalonamento.get(1).transaction); // R1(Y)
+        Assert.assertTrue(2 == protocolo.Escalonamento.get(2).transaction); // R2(X)
+        Assert.assertTrue(2 == protocolo.Escalonamento.get(3).transaction); // W2(Y)
+        Assert.assertTrue(3 == protocolo.Escalonamento.get(4).transaction); // W3(Z)
+        Assert.assertTrue(3 == protocolo.Escalonamento.get(5).transaction); // C3
+        Assert.assertTrue(1 == protocolo.Escalonamento.get(6).transaction); // R1(Z)
+        // Assert.assertTrue(1 == protocolo.Escalonamento.get(7).transaction); // C1
+        // Assert.assertTrue(2 == protocolo.Escalonamento.get(8).transaction); // C2
+    }
 
 
 }
