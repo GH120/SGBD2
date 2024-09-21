@@ -117,4 +117,46 @@ public class Protocolo2V2PLTest {
         Assert.assertTrue(1 == protocolo.Escalonamento.get(2).transaction);
         // Assert.assertTrue(2 == protocolo.Escalonamento.get(3).transaction);
     }
+
+    @Test
+    public void testCommitDeadlock() {
+        database = criarBancoDeDadosExemplo1(); // Inicializa o banco de dados padrão para esse teste
+        protocolo.database = database;
+
+        // Configurar registros
+        Registro registroX = database.buscarRegistro("X");
+
+        // Criar operações
+        LinkedList<Operacao> operacoes = new LinkedList<>();
+        operacoes.add(new Write(1, registroX));  // W1(X)
+        operacoes.add(new Read(1, registroX));   // R1(X)
+        operacoes.add(new Read(2, registroX));   // R2(X)
+        operacoes.add(new Commit(1));            // C1
+        operacoes.add(new Write(2, registroX));  // W2(X)
+        operacoes.add(new Commit(2));            // C2
+
+        //Ordem esperada => c1 não consegue comitar pois r2(x) está lendo a cópia antiga do banco de dados
+        // c1 espera a transação t2
+        // w2 cria uma nova copia do banco de dados e é escalonado
+        // c2 não consegue comitar pois R1 está lendo o estado do banco de dados
+        //Deadlock
+
+        // Executar o escalonamento
+        protocolo.rodar(operacoes);
+
+        // Verificar se as operações foram escalonadas corretamente
+        Assert.assertEquals(4, protocolo.Escalonamento.size()); // Todas as operações devem ser escalonadas
+        Assert.assertTrue(protocolo.Escalonamento.get(0) instanceof Write);
+        Assert.assertTrue(protocolo.Escalonamento.get(1) instanceof Read);
+        Assert.assertTrue(protocolo.Escalonamento.get(2) instanceof Read);
+        Assert.assertTrue(protocolo.Escalonamento.get(3) instanceof Write);
+
+        // Verificar a ordem das operações escalonadas
+        Assert.assertTrue(1 == protocolo.Escalonamento.get(0).transaction);
+        Assert.assertTrue(1 == protocolo.Escalonamento.get(1).transaction);
+        Assert.assertTrue(2 == protocolo.Escalonamento.get(2).transaction);
+        Assert.assertTrue(2 == protocolo.Escalonamento.get(3).transaction);
+    }
+
+
 }

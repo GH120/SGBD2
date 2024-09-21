@@ -43,6 +43,11 @@ class Protocolo2V2PL implements Protocolo {
 
             Boolean  TransacaoEsperandoOutra = GrafoWaitFor.keySet().contains(operacao.transaction);
 
+            if(detectarDeadlock()) {
+                System.out.println("Deadlock");
+                break;
+            }
+
             //Verifica se está no grafo waitfor, se estiver skippa
             if(TransacaoEsperandoOutra) continue;
 
@@ -84,6 +89,10 @@ class Protocolo2V2PL implements Protocolo {
         if(TabelaConflitos.podeConcederBloqueio(write)){
             write.registro.bloqueio = TabelaConflitos.obterBloqueio(write); //Talvez transformar em um setter dos registros
 
+            BloqueiosAtivos.add(write.registro.bloqueio);
+
+            //Faltou tratar o caso em que já existe uma cópia do banco de dados
+
             //Criar cópia do banco de dados -> create copy
             this.criarCopia(write);
 
@@ -111,6 +120,8 @@ class Protocolo2V2PL implements Protocolo {
 
         if(TabelaConflitos.podeConcederBloqueio(read)){
             registro.bloqueio = TabelaConflitos.obterBloqueio(read); //Talvez transformar em um setter dos registros
+
+            BloqueiosAtivos.add(registro.bloqueio);
 
             //Escalona wj(xn) -> parte do 2v2PL
 
@@ -164,7 +175,7 @@ class Protocolo2V2PL implements Protocolo {
         for(var wlj : writelock){
 
             Bloqueio rlk = readlock.stream()
-                                   .filter(rli -> rli.transaction != wlj.transaction && rli.registro.nome == wlj.registro.nome)
+                                   .filter(rli -> rli.registro.nome == wlj.registro.nome && rli.transaction != wlj.transaction)
                                    .findFirst()
                                    .orElse(null);
 
