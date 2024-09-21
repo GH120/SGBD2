@@ -21,7 +21,6 @@ public abstract class Operacao{
 
     // Propriedade para armazenar o tipo da operação
     public type tipoOperacao;
-    public lock escopoLock;
 
     // Enum para definir os tipos de operação
     public enum type {
@@ -32,6 +31,8 @@ public abstract class Operacao{
         ABORT
     }
 
+    public lock escopoLock = lock.rowlock;
+    
     public enum lock{
         rowlock,
         pagelock,

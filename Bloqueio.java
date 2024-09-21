@@ -16,9 +16,10 @@ public class Bloqueio {
     public Registro registro;
 
     // Construtor
-    public Bloqueio(type tipoBloqueio, Registro data) {
+    public Bloqueio(type tipoBloqueio, Registro data, Integer transaction) {
         this.tipo = tipoBloqueio;
-        this.registro = registro;
+        this.registro = data;
+        this.transaction = transaction;
     }
 
     // Define o ID da transação que detém o bloqueio

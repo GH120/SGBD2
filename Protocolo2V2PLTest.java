@@ -13,7 +13,7 @@ public class Protocolo2V2PLTest {
     @Before
     public void setUp() {
         protocolo = new Protocolo2V2PL();
-        database = criarBancoDeDadosExemplo(); // Inicializa o banco de dados vazio
+        database = criarBancoDeDadosExemplo1(); // Inicializa o banco de dados vazio
         protocolo.database = database;
         protocolo.GrafoWaitFor = new HashMap<>();
         protocolo.BloqueiosAtivos = new ArrayList<>();
@@ -22,7 +22,7 @@ public class Protocolo2V2PLTest {
         protocolo.OperacoesRestantes = new LinkedList<>();
     }
 
-    public static Database criarBancoDeDadosExemplo() {
+    public static Database criarBancoDeDadosExemplo1() {
         // Criar registros
         Registro registro1 = new Registro("X", 100, null);
         Registro registro2 = new Registro("Y", 200, null);
@@ -53,6 +53,10 @@ public class Protocolo2V2PLTest {
 
     @Test
     public void testEscalonamentoLeituras() {
+
+        database = criarBancoDeDadosExemplo1(); // Inicializa o banco de dados padrão para esse teste
+        protocolo.database = database;
+
         // Configurar registros
         Registro registro1 = database.buscarRegistro("X");
         Registro registro2 = database.buscarRegistro("Y");
@@ -79,5 +83,38 @@ public class Protocolo2V2PLTest {
         Assert.assertTrue(2 == protocolo.Escalonamento.get(1).transaction);
         Assert.assertTrue(1 == protocolo.Escalonamento.get(2).transaction);
         Assert.assertTrue(2 == protocolo.Escalonamento.get(3).transaction);
+    }
+
+    @Test
+    public void testEscalonamentoEscritas() {
+        database = criarBancoDeDadosExemplo1(); // Inicializa o banco de dados padrão para esse teste
+        protocolo.database = database;
+
+        // Configurar registros
+        Registro registroX = database.buscarRegistro("X");
+        Registro registroY = database.buscarRegistro("Y");
+
+        // Criar operações
+        LinkedList<Operacao> operacoes = new LinkedList<>();
+        operacoes.add(new Write(1, registroX)); // Transação 1 escreve em Registro X
+        operacoes.add(new Read(2, registroY));   // Transação 2 lê Registro Y
+        operacoes.add(new Read(1, registroY));   // Transação 1 lê Registro Y
+        operacoes.add(new Write(2, registroX));  // Transação 2 escreve em Registro X
+
+        // Executar o escalonamento
+        protocolo.rodar(operacoes);
+
+        // Verificar se as operações foram escalonadas corretamente
+        Assert.assertEquals(3, protocolo.Escalonamento.size()); //O último write não vai ser permitido entrar
+        Assert.assertTrue(protocolo.Escalonamento.get(0) instanceof Write);
+        Assert.assertTrue(protocolo.Escalonamento.get(1) instanceof Read);
+        Assert.assertTrue(protocolo.Escalonamento.get(2) instanceof Read);
+        // Assert.assertTrue(protocolo.Escalonamento.get(3) instanceof Write);
+        
+        // Verificar a ordem das operações escalonadas
+        Assert.assertTrue(1 == protocolo.Escalonamento.get(0).transaction);
+        Assert.assertTrue(2 == protocolo.Escalonamento.get(1).transaction);
+        Assert.assertTrue(1 == protocolo.Escalonamento.get(2).transaction);
+        // Assert.assertTrue(2 == protocolo.Escalonamento.get(3).transaction);
     }
 }

@@ -56,11 +56,11 @@ public class TabelaConflitos {
 
         switch (operacao.tipoOperacao) {
             case READ:
-                return new Bloqueio(Bloqueio.type.LEITURA, operacao.registro);
+                return new Bloqueio(Bloqueio.type.LEITURA, operacao.registro, operacao.transaction);
             case WRITE:
-                return new Bloqueio(Bloqueio.type.ESCRITA, operacao.registro);
+                return new Bloqueio(Bloqueio.type.ESCRITA, operacao.registro, operacao.transaction);
             case COMMIT:
-                return new Bloqueio(Bloqueio.type.CERTIFY, operacao.registro);
+                return new Bloqueio(Bloqueio.type.CERTIFY, operacao.registro, operacao.transaction);
             default:
                 throw new IllegalArgumentException("Tipo de operação desconhecido.");
         }

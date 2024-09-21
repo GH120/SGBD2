@@ -37,9 +37,6 @@ class Protocolo2V2PL implements Protocolo {
 
     public void rodar(LinkedList<Operacao> OperacoesEmOrdemCronologica){
 
-        //Reverte a ordem para o pop funcionar retirando elementos do início
-        Collections.reverse(OperacoesEmOrdemCronologica);
-
         while(!OperacoesEmOrdemCronologica.isEmpty()){
 
             Operacao operacao = OperacoesEmOrdemCronologica.pop();
@@ -76,6 +73,8 @@ class Protocolo2V2PL implements Protocolo {
             }
 
         }
+
+        Collections.reverse(Escalonamento);
     }
 
     private boolean rodarOperacao(Write write){
@@ -92,10 +91,9 @@ class Protocolo2V2PL implements Protocolo {
             return true;
         }
         else{
-            //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
+            //Não pode conceder bloqueio
             Integer transaction = bloqueioExistente.getTransaction();
             
-            //Senão botar transação em espera no grafo wait for 
             GrafoWaitFor.put(write.transaction, transaction);
 
             //Detectar Deadlock
@@ -201,28 +199,6 @@ class Protocolo2V2PL implements Protocolo {
 
 
     //Lógica de solicitar bloqueio, solucionar conflito, resolver deadlock...
-
-    private boolean solicitarBloqueio(Operacao operacao){
-
-        //Pegar registro referido da operação
-        Registro registro = operacao.registro;
-    
-        if(TabelaConflitos.podeConcederBloqueio(operacao)){
-            registro.bloqueio = TabelaConflitos.obterBloqueio(operacao);
-
-            return true;
-        }
-        //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
-        Integer transaction = registro.bloqueio.getTransaction();
-        
-        //Senão botar transação em espera no grafo wait for 
-        GrafoWaitFor.put(operacao.transaction, transaction);
-
-        //Detectar Deadlock
-        if(detectarDeadlock()) abortarTransaction(operacao.transaction);
-
-        return false;
-    }
 
     private boolean solucionarConflito(Operacao operacao){
 
