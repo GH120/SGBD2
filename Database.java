@@ -5,10 +5,10 @@ import java.util.function.Predicate;
 
 abstract class Data {
 
-    public Bloqueio bloqueio    = null;
+    public ArrayList<Bloqueio> bloqueios = new ArrayList<>();
 
     abstract boolean  temBloqueio(Operacao operacao);
-    abstract boolean  propagarBloqueioIntencional(Bloqueio bloqueio);
+    abstract void     propagarBloqueio(Bloqueio bloqueio);
     abstract Registro buscarRegistro(String nome);
     abstract Data     clonar(); 
     abstract Data     buscar(Predicate<Data> filtro);
@@ -32,8 +32,15 @@ abstract class Composite extends Data{
         return false;
     }
 
-    public boolean propagarBloqueioIntencional(Bloqueio bloqueio) {
-        return false;
+    public void propagarBloqueio(Bloqueio bloqueio) {
+
+        bloqueio.data = this;
+        
+        bloqueios.add(bloqueio);
+
+        if(getPai() == null) return;
+
+        getPai().propagarBloqueio(bloqueio.intencional());
     }
 
     public Data buscar(Predicate<Data> condition) {
@@ -188,15 +195,18 @@ class Registro extends Data {
     }
 
     public boolean temBloqueio(Operacao operacao) {
-        return bloqueio != null;
+        return bloqueios != null;
     }
 
-    public boolean propagarBloqueioIntencional(Bloqueio bloqueio) {
-        if (this.bloqueio == null) {
-            this.bloqueio = bloqueio;
-            return true;
-        }
-        return false; // Logic for compatibility can be added
+    public void propagarBloqueio(Bloqueio bloqueio) {
+
+        bloqueio.data = this;
+        
+        bloqueios.add(bloqueio);
+
+        if(getPai() == null) return;
+
+        getPai().propagarBloqueio(bloqueio.intencional());
     }
 
     public Data buscar(Predicate<Data> condition) {

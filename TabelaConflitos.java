@@ -38,7 +38,7 @@ public class TabelaConflitos {
 
         Boolean bloqueioPermitido =  podeConcederBloqueio(bloqueioExistente.tipo, novoBloqueio.tipo);
 
-        Boolean bloqueioPermitidoTodosPais = pai != null && podeConcederBloqueio(pai.bloqueio, novaOperacao);
+        Boolean bloqueioPermitidoTodosPais = pai != null && podeConcederBloqueio(novaOperacao, pai.bloqueios);
 
         //Retorna se permitiu o bloqueio dele e de todos os seus ascendentes
         return bloqueioPermitido && (pai == null || bloqueioPermitidoTodosPais);
