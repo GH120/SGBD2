@@ -21,7 +21,7 @@
       "tipo": "WRITE"
     },
     {
-      "transaction": 4,
+      "transaction": 2,
       "registro": "Registro3",
       "timestamp": 1,
       "escopo": "rowlock",

@@ -43,6 +43,7 @@ class Protocolo2V2PL implements Protocolo {
         this.BloqueiosAtivos = new ArrayList<>();          // Inicializa a lista de bloqueios ativos
         this.datacopies = new HashMap<>();                 // Inicializa o mapa de cópias da database
         this.OperacoesEmOrdemCronologica = new LinkedList<>(); // Inicializa a lista de operações cronológicas
+        this.OrdemInsercaoTransacoes = new ArrayList<>();  // Inicializa a lista de transações em ordem de inserção
     }
     
     

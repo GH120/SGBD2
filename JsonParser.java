@@ -32,17 +32,20 @@ public class JsonParser {
             Type databaseType = new TypeToken<Database>() {}.getType();
             database = gson.fromJson(reader, databaseType);
             database.nodes = database.tabelas;
+            database.bloqueios = new ArrayList<>();
 
             for (Tabela tabela : database.tabelas) {
                 print("Tabela:");
                 tabela.setPai(database);
                 tabela.nodes = tabela.paginas;
+                tabela.bloqueios = new ArrayList<>();
                 // print("PAI TABELA: " + tabela.getPai().toString());
 
                 for (Pagina pagina : tabela.paginas) {
                     print("    Pagina:");
                     pagina.setPai(tabela);
                     pagina.nodes = pagina.registros;
+                    pagina.bloqueios = new ArrayList<>();
                     // print("PAI PAGINA: " + pagina.getPai().toString());
 
                     for (Registro registro : pagina.registros) {
@@ -76,9 +79,9 @@ public class JsonParser {
                 Operacao.lock escopoLock = Operacao.lock.valueOf(jsonObject.get("escopo").getAsString());
                 Operacao.type tipo = Operacao.type.valueOf(jsonObject.get("tipo").getAsString());
 
-                System.out.println("Buscando " + registroNome);
+                // System.out.println("Buscando " + registroNome);
                 Registro registro = database.buscarRegistro(registroNome);
-                System.out.println("Registro encontrado:" + registro);
+                // System.out.println("Registro encontrado:" + registro);
 
                 Operacao operacao = null;
                 switch (tipo) {

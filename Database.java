@@ -26,6 +26,7 @@ abstract class Composite extends Data{
 
     Composite(ArrayList<? extends Data> nodes){
         this.nodes      = nodes;
+        this.bloqueios  = new ArrayList<>();
     }
 
     public void removerBloqueios(Integer transaction) {
@@ -73,8 +74,8 @@ abstract class Composite extends Data{
 
         Data registro = buscar(x -> x != null && x instanceof Registro && ((Registro) x).nome.equals(nome));
 
-        if (registro != null)
-            System.out.println(registro);
+        // if (registro != null)
+        //     System.out.println(registro);
 
         return (Registro) registro;
     }
@@ -252,7 +253,7 @@ class Registro extends Data {
 
     public void propagarBloqueio(Bloqueio bloqueio) {
 
-        System.out.println(bloqueios == null);
+        // System.out.println(bloqueios == null);
         bloqueio.data = this;
         
         bloqueios.add(bloqueio);

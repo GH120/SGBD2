@@ -20,7 +20,7 @@ public class Controle {
     }
 
     public static LinkedList createOpsList(String path, Database database){
-        JsonParser jsonParser = new JsonParser(true);
+        JsonParser jsonParser = new JsonParser(false);
         LinkedList<Operacao> operacoes = jsonParser.jsonToOperacoes(path, database);
         return operacoes;
     }
