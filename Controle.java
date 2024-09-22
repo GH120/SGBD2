@@ -38,14 +38,21 @@ public class Controle {
         return operacoes;
     }
 
-    public void runEscalonamento(LinkedList<Operacao> operacoes, Database db) {
+    public void runEscalonamento(String string) {
+
+        Database database = this.createDatabase();
+        
+        this.compilarOperacoes(string); //Parser nas string
+
+        LinkedList<Operacao> operacoes = this.createOpsList();
+
         Protocolo2V2PL protocolo = new Protocolo2V2PL();
-        protocolo.database = db;
+        protocolo.database = database;
         protocolo.rodar(operacoes);
         protocolo.Escalonamento.forEach(x -> System.out.print(x.getNome()));
     }
 
-    public void parserOperacoes(String operacoesEscritas){
+    public void compilarOperacoes(String operacoesEscritas){
         try{
 
             ParserOperacoes.escreverParaArquivo(

@@ -370,7 +370,7 @@ class Protocolo2V2PL implements Protocolo {
         OperacoesRestantes         .removeIf(operacao -> operacao.transaction == transaction);
         OperacoesEmOrdemCronologica.removeIf(operacao -> operacao.transaction == transaction);
 
-        System.out.println("Transação " + transaction + " abortada devido a deadlock.");
+        System.out.println("Transação " + transaction + " abortada");
 
     }
 

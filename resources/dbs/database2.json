@@ -1,0 +1,41 @@
+{
+    "tabelas": [
+      {
+        "paginas": [
+          {
+            "registros": [
+              {
+                "nome": "X",
+                "valor": 100
+              },
+              {
+                "nome": "Y",
+                "valor": 200
+              }
+            ]
+          },
+          {
+            "registros": [
+              {
+                "nome": "Z",
+                "valor": 300
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "paginas": [
+          {
+            "registros": [
+              {
+                "nome": "W",
+                "valor": 400
+              }
+            ]
+          }
+        ]
+      }
+    ]
+}
+  
