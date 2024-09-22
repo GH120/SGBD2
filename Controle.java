@@ -16,25 +16,9 @@ public class Controle {
 
     void createDatabase(){
 
-        JsonParser jsonParser = new JsonParser(true);
-        jsonParser.jsonToDatabase("resources/database1.json");
-        
-        ArrayList<Tabela> tabelas = new ArrayList<>();
-        
-        Database database = new Database(tabelas);
-
-        ArrayList<Pagina> paginas = new ArrayList<>();
-        
-        Tabela tabela = new Tabela(paginas, database);
-        tabelas.add(tabela);
-
-        ArrayList<Registro> registros = new ArrayList<>();
-        
-        Pagina pagina = new Pagina(registros, tabela);
-        paginas.add(pagina);
-
-        Registro registro = new Registro("Registro1", 100, pagina);
-        registros.add(registro);
+        JsonParser jsonParser = new JsonParser(false);
+        Database database = jsonParser.jsonToDatabase("resources/dbs/database1.json");
+        System.out.println(database); 
     }
 
     void selecionarTransacao(){

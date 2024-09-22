@@ -102,6 +102,15 @@ class Database extends Composite {
     public void setPai(Data data){
         return;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Database:\n");
+        for (Tabela tabela : tabelas) {
+            sb.append(tabela.toString()).append("\n");  // Chama o toString da classe Tabela
+        }
+        return sb.toString();
+    }
 }
 
 class Tabela extends Composite {
@@ -138,6 +147,14 @@ class Tabela extends Composite {
         this.database = (Database) database;
     }
 
+    public String toString() {
+        StringBuilder sb = new StringBuilder("  Tabela:\n");
+        for (Pagina pagina : paginas) {
+            sb.append(pagina.toString()).append("\n");  // Chama o toString da classe Pagina
+        }
+        return sb.toString();
+    }
+
 }
 
 class Pagina extends Composite {
@@ -172,6 +189,15 @@ class Pagina extends Composite {
 
     public void setPai(Data tabela){
         this.tabela = (Tabela) tabela;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder("      Pagina:\n");
+        for (Registro registro : registros) {
+            sb.append("    Registro: ").append(registro.nome)
+              .append(", Valor: ").append(registro.valor).append("\n");
+        }
+        return sb.toString();
     }
 
 }

@@ -20,19 +20,18 @@ public class JsonParser {
             System.out.println(x);
         }
     }
-    public void jsonToDatabase(String path) {
+    public Database jsonToDatabase(String path) {
         Gson gson = new Gson();
+        Database database = null;
 
         try (FileReader reader = new FileReader(path)) {
-            
             Type databaseType = new TypeToken<Database>() {}.getType();
-
-            Database database = gson.fromJson(reader, databaseType);
+            database = gson.fromJson(reader, databaseType);
 
             for (Tabela tabela : database.tabelas) {
-                print("Tabela");
+                print("Tabela:");
                 for (Pagina pagina : tabela.paginas) {
-                    print("    Pagina");
+                    print("    Pagina:");
                     for (Registro registro : pagina.registros) {
                         print("        Registro: " + registro.nome + ", Valor: " + registro.valor);
                     }
@@ -41,5 +40,7 @@ public class JsonParser {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }    
+
+        return database;
+    }  
 }
