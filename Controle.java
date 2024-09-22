@@ -12,10 +12,17 @@ public class Controle {
         //Usa o escalonamento desse protocolo para criar uma string
         //Printa no output
 
-    void createDatabase(String path){
+    public static Database createDatabase(String path){
         JsonParser jsonParser = new JsonParser(false);
         Database database = jsonParser.jsonToDatabase(path);
-        System.out.println(database);
+        // System.out.println(database);
+        return database;
+    }
+
+    public static LinkedList createOpsList(String path, Database database){
+        JsonParser jsonParser = new JsonParser(true);
+        LinkedList<Operacao> operacoes = jsonParser.jsonToOperacoes(path, database);
+        return operacoes;
     }
 
     void selecionarTransacao(){

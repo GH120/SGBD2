@@ -1,0 +1,30 @@
+[
+    {
+      "transaction": 1,
+      "registro": "Registro1",
+      "timestamp": 1,
+      "escopo": "tablelock",
+      "tipo": "WRITE"
+    },
+    {
+      "transaction": 1,
+      "registro": "Registro1",
+      "timestamp": 1,
+      "escopo": "rowlock",
+      "tipo": "READ"
+    },
+    {
+      "transaction": 1,
+      "registro": "Registro2",
+      "timestamp": 1,
+      "escopo": "tablelock",
+      "tipo": "WRITE"
+    },
+    {
+      "transaction": 4,
+      "registro": "Registro3",
+      "timestamp": 1,
+      "escopo": "rowlock",
+      "tipo": "READ"
+    }
+]

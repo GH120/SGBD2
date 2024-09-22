@@ -22,7 +22,7 @@ abstract class Data {
 //Implementação do padrão composite, útil para modelar a árvore onde os nós folhas são os registros
 abstract class Composite extends Data{
 
-    private ArrayList<? extends Data> nodes; //nodes é uma maneira generalizada de chamar os filhos, se for database então seus filhos são tabelas, de tabelas páginas e assim em diante.
+    public ArrayList<? extends Data> nodes; //nodes é uma maneira generalizada de chamar os filhos, se for database então seus filhos são tabelas, de tabelas páginas e assim em diante.
 
     Composite(ArrayList<? extends Data> nodes){
         this.nodes      = nodes;
@@ -53,16 +53,28 @@ abstract class Composite extends Data{
 
         if (condition.test(this)) return this;
 
-        else return  nodes.stream()
-                          .map(node -> node.buscar(condition))
-                          .filter(node -> node != null)
-                          .findFirst()
-                          .orElse(null);
+        else {
+
+            for (Data node : nodes) {
+                System.out.println("NODE: " + node.toString());
+                if (node != null && condition.test(node)) return node;
+            }
+            return null;
+
+            // node = nodes.stream()
+                // .filter(node -> node != null)
+                // .map(node -> node.buscar(condition))
+                // .findFirst()
+                // .orElse(null);
+        } 
     }
 
     public Registro buscarRegistro(String nome){
 
-        Data registro = buscar(x -> x instanceof Registro && ((Registro) x).nome.equals(nome));
+        Data registro = buscar(x -> x != null && x instanceof Registro && ((Registro) x).nome.equals(nome));
+
+        if (registro != null)
+            System.out.println(registro);
 
         return (Registro) registro;
     }
