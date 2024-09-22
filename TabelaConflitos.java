@@ -16,24 +16,29 @@ public class TabelaConflitos {
         {  true ,  false ,   false ,  false  ,   true ,   true ,     true,    true  },  // INTENCIONAL_UPDATE
     };
 
+    // Método para verificar se dois tipos de bloqueio são compatíveis
+    public static boolean compativeis(
+        Bloqueio.type bloqueioAtual, 
+        Bloqueio.type novoBloqueio
+    ) {
+        return MATRIZ_CONFLITOS[bloqueioAtual.ordinal()][novoBloqueio.ordinal()];
+    }
+
     public static boolean podeConcederBloqueio(
         Operacao novaOperacao,
         List<Bloqueio> bloqueios
     ) {
 
-        if(bloqueios.size() == 0) return true;
+        if(bloqueios.size() == 0){
 
-        return bloqueios.stream().allMatch(bloqueio -> podeConcederBloqueio(bloqueio, novaOperacao));
-    }
-
-    public static boolean podeConcederBloqueio(
-        Bloqueio bloqueioNovo,
-        List<Bloqueio> bloqueios
-    ) {
-
-        if(bloqueios.size() == 0) return true;
-
-        return bloqueios.stream().allMatch(bloqueio -> podeConcederBloqueio(bloqueio.tipo, bloqueioNovo.tipo));
+            return bloqueioPermitidoParaTodosPais(
+                    novaOperacao.registro.getPai(), 
+                    obterBloqueio(novaOperacao)
+            );
+        } 
+                
+        return bloqueios.stream()
+                        .allMatch(bloqueio -> podeConcederBloqueio(bloqueio, novaOperacao));
     }
 
     // Sobrecarga para verificar compatibilidade entre um bloqueio existente e uma nova operação
@@ -48,27 +53,34 @@ public class TabelaConflitos {
         
         Bloqueio novoBloqueio = obterBloqueio(novaOperacao);
 
-        Boolean bloqueioPermitido =  podeConcederBloqueio(bloqueioExistente.tipo, novoBloqueio.tipo);
+        Boolean bloqueioPermitido = compativeis(bloqueioExistente.tipo, novoBloqueio.tipo);
 
-        Data pai = bloqueioExistente.data.getPai();
+        //Retorna se permitiu o bloqueio dele e de todos os seus ascendentes
+        return bloqueioPermitido && bloqueioPermitidoParaTodosPais(novaOperacao.registro.getPai(), novoBloqueio);
+    }
+
+    public static boolean bloqueioPermitidoParaTodosPais(Data pai, Bloqueio bloqueio){
+
+        boolean bloqueioPermitido = true;
 
         while(pai != null){
 
-            bloqueioPermitido = bloqueioPermitido && podeConcederBloqueio(novoBloqueio.intencional(), pai.bloqueios);
+            bloqueioPermitido = bloqueioPermitido && bloqueiosCompativeis(bloqueio.intencional(), pai.bloqueios);
 
             pai = pai.getPai();
         }
 
-        //Retorna se permitiu o bloqueio dele e de todos os seus ascendentes
         return bloqueioPermitido;
     }
 
-    // Método para verificar se dois tipos de bloqueio são compatíveis
-    public static boolean podeConcederBloqueio(
-        Bloqueio.type bloqueioAtual, 
-        Bloqueio.type novoBloqueio
+    public static boolean bloqueiosCompativeis(
+        Bloqueio bloqueioNovo,
+        List<Bloqueio> bloqueios
     ) {
-        return MATRIZ_CONFLITOS[bloqueioAtual.ordinal()][novoBloqueio.ordinal()];
+
+        if(bloqueios.size() == 0) return true;
+
+        return bloqueios.stream().allMatch(bloqueio -> compativeis(bloqueio.tipo, bloqueioNovo.tipo));
     }
 
     public static boolean bloqueioEmSeuEscopo(Data data, Operacao.lock escopo){

@@ -49,7 +49,7 @@ abstract class Composite extends Data{
 
         if(pai == null) return;
 
-        boolean dentroDoEscopo = TabelaConflitos.bloqueioEmSeuEscopo(bloqueio.data, bloqueio.escopo);
+        boolean dentroDoEscopo = TabelaConflitos.bloqueioEmSeuEscopo(pai, bloqueio.escopo);
 
         if(dentroDoEscopo)
             pai.propagarBloqueio(bloqueio.clonar());
