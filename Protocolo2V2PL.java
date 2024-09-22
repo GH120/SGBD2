@@ -27,6 +27,7 @@ class Protocolo2V2PL implements Protocolo {
     HashMap<Integer,Integer>  GrafoWaitFor;
     ArrayList<Integer>        OrdemInsercaoTransacoes = new ArrayList<>();
     ArrayList <Bloqueio>      BloqueiosAtivos;
+    Boolean                   pararExecucaoEmDeadlock = false;
 
     //Parte da database e cópias de versão do 2v2pl
     Database                  database;
@@ -249,7 +250,9 @@ class Protocolo2V2PL implements Protocolo {
                  //Concede o bloqueio clj(x)
                   Bloqueio bloqueio = TabelaConflitos.obterBloqueio(commit);
 
-                  bloqueio.data = wlj.data;
+                  bloqueio.data   = wlj.data;
+
+                  bloqueio.escopo = wlj.escopo;
                   
                   bloqueio.data.propagarBloqueio(bloqueio);
 

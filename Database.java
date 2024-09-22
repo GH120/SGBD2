@@ -44,9 +44,16 @@ abstract class Composite extends Data{
         
         bloqueios.add(bloqueio);
 
-        if(getPai() == null) return;
+        Data pai = getPai();
 
-        getPai().propagarBloqueio(bloqueio.intencional());
+        if(pai == null) return;
+
+        boolean dentroDoEscopo = TabelaConflitos.bloqueioEmSeuEscopo(bloqueio.data, bloqueio.escopo);
+
+        if(dentroDoEscopo)
+            pai.propagarBloqueio(bloqueio.clonar());
+        else 
+            pai.propagarBloqueio(bloqueio.intencional());
     }
 
     public Data buscar(Predicate<Data> condition) {
@@ -242,9 +249,16 @@ class Registro extends Data {
         
         bloqueios.add(bloqueio);
 
-        if(getPai() == null) return;
+        Data pai = getPai();
 
-        getPai().propagarBloqueio(bloqueio.intencional());
+        if(pai == null) return;
+
+        boolean paiNoEscopo = TabelaConflitos.bloqueioEmSeuEscopo(pai, bloqueio.escopo);
+
+        if(paiNoEscopo)
+            pai.propagarBloqueio(bloqueio.clonar());
+        else 
+            pai.propagarBloqueio(bloqueio.intencional());
     }
 
     public Data buscar(Predicate<Data> condition) {

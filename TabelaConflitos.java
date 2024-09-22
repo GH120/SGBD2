@@ -69,17 +69,39 @@ public class TabelaConflitos {
         return MATRIZ_CONFLITOS[bloqueioAtual.ordinal()][novoBloqueio.ordinal()];
     }
 
+    public static boolean bloqueioEmSeuEscopo(Data data, Operacao.lock escopo){
+
+        boolean isDatabase = data instanceof Database;
+        boolean isTabela   = data instanceof Tabela;
+        boolean isPagina   = data instanceof Pagina;
+        boolean isRegistro = data instanceof Registro;
+
+        if(escopo == Operacao.lock.tablelock){
+            return isTabela || isPagina || isRegistro;
+        }
+
+        if(escopo == Operacao.lock.pagelock){
+            return isPagina || isRegistro;
+        }
+
+        if(escopo == Operacao.lock.rowlock){
+            return isRegistro;
+        }
+
+        return false;
+    }
+
 
     // Método auxiliar para mapear uma operação ao tipo de bloqueio correspondente
     public static Bloqueio obterBloqueio(Operacao operacao) {
 
         switch (operacao.tipoOperacao) {
             case READ:
-                return new Bloqueio(Bloqueio.type.LEITURA, operacao.registro, operacao.transaction);
+                return new Bloqueio(Bloqueio.type.LEITURA, operacao.registro, operacao.transaction, operacao.escopoLock);
             case WRITE:
-                return new Bloqueio(Bloqueio.type.ESCRITA, operacao.registro, operacao.transaction);
+                return new Bloqueio(Bloqueio.type.ESCRITA, operacao.registro, operacao.transaction, operacao.escopoLock);
             case COMMIT:
-                return new Bloqueio(Bloqueio.type.CERTIFY, operacao.registro, operacao.transaction);
+                return new Bloqueio(Bloqueio.type.CERTIFY, operacao.registro, operacao.transaction, operacao.escopoLock);
             default:
                 throw new IllegalArgumentException("Tipo de operação desconhecido.");
         }
