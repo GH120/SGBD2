@@ -26,7 +26,7 @@ public abstract class Operacao{
     public enum type {
         READ,
         WRITE,
-        // UPDATE,
+        UPDATE,
         COMMIT,
         ABORT
     }
@@ -52,6 +52,14 @@ class Write extends Operacao {
     public Write(Integer transaction, Registro registro) {
         super(transaction, registro);
         tipoOperacao = type.WRITE;
+    }
+}
+
+class Update extends Operacao {
+    
+    public Update(Integer transaction, Registro registro) {
+        super(transaction, registro);
+        tipoOperacao = type.UPDATE;
     }
 }
 

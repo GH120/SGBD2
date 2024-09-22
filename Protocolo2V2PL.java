@@ -71,6 +71,9 @@ class Protocolo2V2PL implements Protocolo {
                 else if(operacao instanceof Read   && rodarOperacao((Read)operacao)){
                     escalonarOperacao(operacao);
                 }
+                else if(operacao instanceof Update && rodarOperacao((Update)operacao)){
+                    escalonarOperacao(operacao);
+                }
                 else if(operacao instanceof Commit && rodarOperacao((Commit)operacao)){
 
                     escalonarOperacao(operacao);
@@ -146,7 +149,7 @@ class Protocolo2V2PL implements Protocolo {
 
             bloqueios
             .stream()
-            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(Bloqueio.type.ESCRITA, bloqueio.tipo))
+            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(bloqueio, write))
             .forEach(bloqueioIncompativel -> {
 
                 //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
@@ -199,7 +202,7 @@ class Protocolo2V2PL implements Protocolo {
 
             bloqueios
             .stream()
-            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(Bloqueio.type.LEITURA, bloqueio.tipo))
+            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(bloqueio, read))
             .forEach(bloqueioIncompativel -> {
 
                 //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
@@ -215,6 +218,44 @@ class Protocolo2V2PL implements Protocolo {
         return false;
     }
 
+    private boolean rodarOperacao(Update update){
+
+        Registro registro = update.registro;
+
+        List<Bloqueio> bloqueios = BloqueiosAtivos.stream()
+                                                  .filter(b -> b.data.igual(registro))
+                                                  .toList();
+
+        if(TabelaConflitos.podeConcederBloqueio(update, bloqueios)){
+
+            Bloqueio bloqueio = TabelaConflitos.obterBloqueio(update); //Talvez transformar em um setter dos registros
+
+            BloqueiosAtivos.add(bloqueio);
+
+            registro.propagarBloqueio(bloqueio); //Cria os bloqueios intencionais 
+
+            //Escalona wj(xn) -> parte do 2v2PL
+            return true;
+        }
+        else{
+
+            bloqueios
+            .stream()
+            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(bloqueio, update))
+            .forEach(bloqueioIncompativel -> {
+
+                //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
+                Integer transaction = bloqueioIncompativel.getTransaction();
+                
+                //Senão botar transação em espera no grafo wait for 
+                GrafoWaitFor.put(update.transaction, transaction);
+
+            });
+
+            return false;
+        }
+
+    }
     //Caso de commit ou abort
     private boolean rodarOperacao(Commit commit){
 

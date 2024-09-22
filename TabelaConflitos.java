@@ -5,13 +5,15 @@ public class TabelaConflitos {
 
     // Definindo a matriz de compatibilidade como static final
     private static final boolean[][] MATRIZ_CONFLITOS = {
-        // LEITURA  ESCRITA  CERTIFY  INT_LEIT  INT_ESCR  INT_CERT
-        {  true ,   true ,   false ,   true ,   true ,    false },  // LEITURA
-        {  true ,  false ,   false ,   true ,   false ,   false },  // ESCRITA
-        { false ,  false ,    true ,   false,   false ,    true },  // CERTIFY
-        {  true ,   true ,   false ,   true ,   true ,     true },  // INTENCIONAL_LEITURA
-        {  true ,  false ,   false ,   true ,   true ,     true },  // INTENCIONAL_ESCRITA
-        { false ,  false ,   false ,   true ,   true ,     true },  // INTENCIONAL_CERTIFY
+        // LEITURA  ESCRITA  CERTIFY  UPDATE   INT_LEIT  INT_ESCR  INT_CERT  INT_UPDT
+        {  true ,   true ,   false ,  true   ,   true ,   true ,    false,    true  },  // LEITURA
+        {  true ,  false ,   false ,  false  ,   true ,   false ,   false,    false },  // ESCRITA
+        { false ,  false ,   false ,  false  ,   false,   false ,   false,    false },  // CERTIFY
+        {  true ,  false ,   false ,  false  ,   true ,   false ,   false,    false },  // UPDATE
+        {  true ,   true ,   false ,  true   ,   true ,   true ,     true,    true  },  // INTENCIONAL_LEITURA
+        {  true ,  false ,   false ,  false  ,   true ,   true ,     true,    true  },  // INTENCIONAL_ESCRITA
+        { false ,  false ,   false ,  false  ,   true ,   true ,     true,    true  },  // INTENCIONAL_CERTIFY
+        {  true ,  false ,   false ,  false  ,   true ,   true ,     true,    true  },  // INTENCIONAL_UPDATE
     };
 
     public static boolean podeConcederBloqueio(
@@ -100,6 +102,8 @@ public class TabelaConflitos {
                 return new Bloqueio(Bloqueio.type.LEITURA, operacao.registro, operacao.transaction, operacao.escopoLock);
             case WRITE:
                 return new Bloqueio(Bloqueio.type.ESCRITA, operacao.registro, operacao.transaction, operacao.escopoLock);
+            case UPDATE:
+                return new Bloqueio(Bloqueio.type.UPDATE , operacao.registro, operacao.transaction, operacao.escopoLock);
             case COMMIT:
                 return new Bloqueio(Bloqueio.type.CERTIFY, operacao.registro, operacao.transaction, operacao.escopoLock);
             default:

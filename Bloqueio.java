@@ -3,10 +3,12 @@ public class Bloqueio {
     public enum type {
         LEITURA, 
         ESCRITA, 
-        CERTIFY, 
+        CERTIFY,
+        UPDATE, 
         INTENCIONAL_LEITURA, 
         INTENCIONAL_ESCRITA, 
-        INTENCIONAL_CERTIFY
+        INTENCIONAL_CERTIFY,
+        INTENCIONAL_UPDATE
     }
 
     public type tipo;
@@ -38,14 +40,15 @@ public class Bloqueio {
     // Retorna a versão intencional desse bloqueio para ser 
     public Bloqueio intencional(){
 
-        System.out.println(this.tipo);
-
         switch(this.tipo){
             case LEITURA:{
                 return new Bloqueio(type.INTENCIONAL_LEITURA, null, transaction, escopo);
             }
             case ESCRITA:{
                 return new Bloqueio(type.INTENCIONAL_ESCRITA, null, transaction, escopo);
+            }
+            case UPDATE:{
+                return new Bloqueio(type.INTENCIONAL_UPDATE, null, transaction, escopo);
             }
             case CERTIFY:{
                 return new Bloqueio(type.INTENCIONAL_CERTIFY, null, transaction, escopo);
