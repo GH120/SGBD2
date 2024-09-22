@@ -31,4 +31,23 @@ public class Bloqueio {
     public Integer getTransaction() {
         return transaction;
     }
+
+    // Retorna a versão intencional desse bloqueio para ser 
+    public Bloqueio intencional(){
+
+        switch(this.tipo){
+            case LEITURA:{
+                return new Bloqueio(type.INTENCIONAL_LEITURA, null, transaction);
+            }
+            case ESCRITA:{
+                return new Bloqueio(type.INTENCIONAL_ESCRITA, null, transaction);
+            }
+            case CERTIFY:{
+                return new Bloqueio(type.INTENCIONAL_CERTIFY, null, transaction);
+            }
+            default:{
+                return null;
+            }
+        }
+    }
 }
