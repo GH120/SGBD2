@@ -20,18 +20,30 @@ class Protocolo2V2PL implements Protocolo {
     //se houver coloca nas operações restantes
     LinkedList<Operacao>      Escalonamento;
     LinkedList<Operacao>      OperacoesRestantes;
-    LinkedList<Operacao>      OperacoesEmOrdemCronologica = new LinkedList();
+    LinkedList<Operacao>      OperacoesEmOrdemCronologica;
 
     //Detecção de conflitos -> grafo de serialização
     //Detecção de deadlock -> grafo de wait-for
     HashMap<Integer,Integer>  GrafoWaitFor;
-    ArrayList<Integer>        OrdemInsercaoTransacoes = new ArrayList<>();
+    ArrayList<Integer>        OrdemInsercaoTransacoes;
     ArrayList <Bloqueio>      BloqueiosAtivos;
     Boolean                   pararExecucaoEmDeadlock = false;
 
     //Parte da database e cópias de versão do 2v2pl
     Database                  database;
     HashMap<Integer,Database> datacopies;
+
+
+    // Construtor que recebe a database
+    public Protocolo2V2PL() {
+        this.Escalonamento = new LinkedList<>();           // Inicializa a lista de operações escalonadas
+        this.OperacoesRestantes = new LinkedList<>();      // Inicializa a lista de operações restantes
+        this.GrafoWaitFor = new HashMap<>();               // Inicializa o grafo de wait-for
+        this.BloqueiosAtivos = new ArrayList<>();          // Inicializa a lista de bloqueios ativos
+        this.datacopies = new HashMap<>();                 // Inicializa o mapa de cópias da database
+        this.OperacoesEmOrdemCronologica = new LinkedList<>(); // Inicializa a lista de operações cronológicas
+    }
+    
     
 
 
