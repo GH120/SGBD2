@@ -16,6 +16,8 @@ public class TabelaConflitos {
         {  true ,  false ,   false ,  false  ,   true ,   true ,     true,    true  },  // INTENCIONAL_UPDATE
     };
 
+    //Uma bela duma bagunça, necessita de refatoração, espaguetti gigantesco
+
     // Método para verificar se dois tipos de bloqueio são compatíveis
     public static boolean compativeis(
         Bloqueio.type bloqueioAtual, 
@@ -65,7 +67,10 @@ public class TabelaConflitos {
 
         while(pai != null){
 
-            bloqueioPermitido = bloqueioPermitido && bloqueiosCompativeis(bloqueio.intencional(), pai.bloqueios);
+            //Copio o bloqueio e vejo se é intencional ou não baseado no escopo
+            Bloqueio copia = (TabelaConflitos.bloqueioEmSeuEscopo(pai, bloqueio.escopo))? bloqueio.clonar() : bloqueio.intencional();
+
+            bloqueioPermitido = bloqueioPermitido && bloqueiosCompativeis(copia, pai.bloqueios);
 
             pai = pai.getPai();
         }

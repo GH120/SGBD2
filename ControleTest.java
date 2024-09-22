@@ -87,4 +87,16 @@ public class ControleTest {
         // Verificar se o escalonamento foi bem-sucedido
         System.out.println("Operações sem locks especificados escalonadas com sucesso.");
     }
+
+    @Test
+    public void testBloqueioPaginaTabela() throws IOException {
+        // Inicializa o controle com o caminho para a base de dados e operações
+        Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
+
+        // Deve funcionar pois estão em páginas diferentes
+        controle.runEscalonamento("w1(X with pagelock) w2(Z with tablelock) c1 c2");
+        
+        // Verificar se o escalonamento foi bem-sucedido
+        System.out.println("Operações sem locks especificados escalonadas com sucesso.");
+    }
 }
