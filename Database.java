@@ -231,11 +231,13 @@ class Registro extends Data {
     String   nome;
     Integer  valor;
     Pagina   pagina;
+    
 
     public Registro(String nome, Integer valor, Pagina pagina) {
         this.nome       = nome;
         this.valor      = valor;
         this.pagina     = pagina;
+        this.bloqueios  = new ArrayList<>(); 
     }
 
     public void removerBloqueios(Integer transaction) {
@@ -250,6 +252,7 @@ class Registro extends Data {
 
     public void propagarBloqueio(Bloqueio bloqueio) {
 
+        System.out.println(bloqueios == null);
         bloqueio.data = this;
         
         bloqueios.add(bloqueio);

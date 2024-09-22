@@ -25,8 +25,9 @@ public class Controle {
         return operacoes;
     }
 
-    public static void runEscalonamento(LinkedList<Operacao> operacoes) {
+    public static void runEscalonamento(LinkedList<Operacao> operacoes, Database db) {
         Protocolo2V2PL protocolo = new Protocolo2V2PL();
+        protocolo.database = db;
         protocolo.rodar(operacoes);
         protocolo.Escalonamento.forEach(x -> System.out.print(x.getNome()));
     }

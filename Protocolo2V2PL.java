@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 //Todo protocolo vai poder rodar uma lista de operações em ordem cronológica
 //Retorna o escalonamento correto dessa lista, depois de todos os bloqueios concedidos e liberados
@@ -133,7 +134,7 @@ class Protocolo2V2PL implements Protocolo {
 
         List<Bloqueio> bloqueios = BloqueiosAtivos.stream()
                                                   .filter(b -> b.data.igual(registro))
-                                                  .toList();
+                                                  .collect(Collectors.toList());
 
         if(TabelaConflitos.podeConcederBloqueio(write, bloqueios)){
 
@@ -183,7 +184,7 @@ class Protocolo2V2PL implements Protocolo {
 
         List<Bloqueio> bloqueios = BloqueiosAtivos.stream()
                                                   .filter(b -> b.data.igual(registro))
-                                                  .toList();
+                                                  .collect(Collectors.toList());
 
         if(TabelaConflitos.podeConcederBloqueio(read, bloqueios)){
             
@@ -237,7 +238,7 @@ class Protocolo2V2PL implements Protocolo {
 
         List<Bloqueio> bloqueios = BloqueiosAtivos.stream()
                                                   .filter(b -> b.data.igual(registro))
-                                                  .toList();
+                                                  .collect(Collectors.toList());
 
         if(TabelaConflitos.podeConcederBloqueio(update, bloqueios)){
 
@@ -276,12 +277,12 @@ class Protocolo2V2PL implements Protocolo {
         List<Bloqueio> writelock    = BloqueiosAtivos.stream()
                                                      .filter(bloqueio -> bloqueio.tipo == Bloqueio.type.ESCRITA)
                                                      .filter(bloqueio -> bloqueio.transaction == commit.transaction)
-                                                     .toList();
+                                                     .collect(Collectors.toList());
 
         //Todos os readlocks existentes no BD
         List<Bloqueio> readlock     = BloqueiosAtivos.stream()
                                                      .filter(bloqueio -> bloqueio.tipo == Bloqueio.type.LEITURA)
-                                                     .toList();
+                                                     .collect(Collectors.toList());
 
         //Tenta converter todos wlj em clj
         //Enquanto houver wlj(x) faça
