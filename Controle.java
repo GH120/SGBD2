@@ -25,6 +25,12 @@ public class Controle {
         return operacoes;
     }
 
+    public static void runEscalonamento(LinkedList<Operacao> operacoes) {
+        Protocolo2V2PL protocolo = new Protocolo2V2PL();
+        protocolo.rodar(operacoes);
+        protocolo.Escalonamento.forEach(x -> System.out.print(x.getNome()));
+    }
+
     void selecionarTransacao(){
         
     }

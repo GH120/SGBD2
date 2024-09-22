@@ -61,18 +61,11 @@ abstract class Composite extends Data{
         if (condition.test(this)) return this;
 
         else {
-
-            for (Data node : nodes) {
-                System.out.println("NODE: " + node.toString());
-                if (node != null && condition.test(node)) return node;
-            }
-            return null;
-
-            // node = nodes.stream()
-                // .filter(node -> node != null)
-                // .map(node -> node.buscar(condition))
-                // .findFirst()
-                // .orElse(null);
+            return nodes.stream()
+                .map(node -> node.buscar(condition))
+                .filter(node -> node != null)
+                .findFirst()
+                .orElse(null);
         } 
     }
 

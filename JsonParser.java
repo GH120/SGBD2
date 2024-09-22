@@ -77,7 +77,7 @@ public class JsonParser {
 
                 System.out.println("Buscando " + registroNome);
                 Registro registro = database.buscarRegistro(registroNome);
-                System.out.println(registro);
+                System.out.println("Registro encontrado:" + registro);
 
                 Operacao operacao = null;
                 switch (tipo) {
