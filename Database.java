@@ -7,7 +7,7 @@ abstract class Data {
 
     public ArrayList<Bloqueio> bloqueios = new ArrayList<>();
 
-    abstract boolean  temBloqueio(Operacao operacao);
+    abstract void     removerBloqueios(Integer transaction);
     abstract void     propagarBloqueio(Bloqueio bloqueio);
     abstract Registro buscarRegistro(String nome);
     abstract Data     clonar(); 
@@ -28,8 +28,14 @@ abstract class Composite extends Data{
         this.nodes      = nodes;
     }
 
-    public boolean temBloqueio(Operacao operacao) {
-        return false;
+    public void removerBloqueios(Integer transaction) {
+
+        bloqueios.removeIf(b -> b.transaction == transaction);
+
+        Data pai = getPai();
+
+        if(pai != null) pai.removerBloqueios(transaction);
+
     }
 
     public void propagarBloqueio(Bloqueio bloqueio) {
@@ -220,8 +226,14 @@ class Registro extends Data {
         this.pagina     = pagina;
     }
 
-    public boolean temBloqueio(Operacao operacao) {
-        return bloqueios != null;
+    public void removerBloqueios(Integer transaction) {
+
+        bloqueios.removeIf(b -> b.transaction == transaction);
+
+        Data pai = getPai();
+
+        if(pai != null) pai.removerBloqueios(transaction);
+
     }
 
     public void propagarBloqueio(Bloqueio bloqueio) {

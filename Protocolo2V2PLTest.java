@@ -100,22 +100,25 @@ public class Protocolo2V2PLTest {
         operacoes.add(new Read(2, registroY));   // Transação 2 lê Registro Y
         operacoes.add(new Read(1, registroY));   // Transação 1 lê Registro Y
         operacoes.add(new Write(2, registroX));  // Transação 2 escreve em Registro X
+        operacoes.add(new Commit(1));  // Commit 1
 
         // Executar o escalonamento
         protocolo.rodar(operacoes);
 
         // Verificar se as operações foram escalonadas corretamente
-        Assert.assertEquals(3, protocolo.Escalonamento.size()); //O último write não vai ser permitido entrar
+        Assert.assertEquals(5, protocolo.Escalonamento.size()); //O último write não vai ser permitido entrar
         Assert.assertTrue(protocolo.Escalonamento.get(0) instanceof Write);
         Assert.assertTrue(protocolo.Escalonamento.get(1) instanceof Read);
         Assert.assertTrue(protocolo.Escalonamento.get(2) instanceof Read);
-        // Assert.assertTrue(protocolo.Escalonamento.get(3) instanceof Write);
+        Assert.assertTrue(protocolo.Escalonamento.get(3) instanceof Commit);
+        Assert.assertTrue(protocolo.Escalonamento.get(4) instanceof Write);
         
         // Verificar a ordem das operações escalonadas
         Assert.assertTrue(1 == protocolo.Escalonamento.get(0).transaction);
         Assert.assertTrue(2 == protocolo.Escalonamento.get(1).transaction);
         Assert.assertTrue(1 == protocolo.Escalonamento.get(2).transaction);
-        // Assert.assertTrue(2 == protocolo.Escalonamento.get(3).transaction);
+        Assert.assertTrue(1 == protocolo.Escalonamento.get(3).transaction);
+        Assert.assertTrue(2 == protocolo.Escalonamento.get(4).transaction);
     }
 
     @Test
@@ -140,6 +143,8 @@ public class Protocolo2V2PLTest {
         // w2 cria uma nova copia do banco de dados e é escalonado
         // c2 não consegue comitar pois R1 está lendo o estado do banco de dados
         //Deadlock
+        // T2 é abortada
+        // C1 consegue comitar
 
         // Executar o escalonamento
         protocolo.rodar(operacoes);

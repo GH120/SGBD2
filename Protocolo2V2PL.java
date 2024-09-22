@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 //Todo protocolo vai poder rodar uma lista de operações em ordem cronológica
 //Retorna o escalonamento correto dessa lista, depois de todos os bloqueios concedidos e liberados
@@ -47,8 +49,16 @@ class Protocolo2V2PL implements Protocolo {
 
             Boolean  TransacaoEsperandoOutra = GrafoWaitFor.keySet().contains(operacao.transaction);
 
+            //DETECÇÃO DE DEADLOCKS//
+            if(detectarDeadlock()) {
+                solucionarDeadlock(operacao);
+            }
+
             //Verifica se está no grafo waitfor, esperando liberar outra transação, se estiver skippa
-            if(TransacaoEsperandoOutra);
+            else if(TransacaoEsperandoOutra){
+                OperacoesRestantes.add(operacao);
+                System.out.println("Tamanho: " + OperacoesRestantes.size() + "outro: " + OperacoesEmOrdemCronologica.size());
+            }
 
             //TRATATAMENTO DE OPERAÇÕES//
             else{
@@ -61,9 +71,21 @@ class Protocolo2V2PL implements Protocolo {
                     escalonarOperacao(operacao);
                 }
                 else if(operacao instanceof Commit && rodarOperacao((Commit)operacao)){
+
                     escalonarOperacao(operacao);
-                    //Liberar bloqueios e sincronizar cópias
+
+                    sincronizarBancosDeDados(operacao.transaction);
+
                     liberarBloqueios(operacao.transaction); //Libera os bloqueios do commit
+
+                    //Enquanto estiver sincronizando os certify locks estão funcionando, 
+                    //Outras operações que não afetem os dados sincronizados poderão ser efetivadas
+                    CompletableFuture.runAsync(() -> {
+                        
+                        //Retirado daqui por causar comportamento imprevisível
+                        //Se requisitado pelo professor, reinserir
+
+                    });
                 }
                 else if(operacao instanceof Abort){
                     escalonarOperacao(operacao);
@@ -73,11 +95,6 @@ class Protocolo2V2PL implements Protocolo {
                 else{
                     OperacoesRestantes.push(operacao);
                 }
-            }
-
-            //DETECÇÃO DE DEADLOCKS//
-            if(detectarDeadlock()) {
-                solucionarDeadlock(operacao);
             }
 
             //Se terminar as operações em ordem cronológica, 
@@ -232,6 +249,10 @@ class Protocolo2V2PL implements Protocolo {
                  //Concede o bloqueio clj(x)
                   Bloqueio bloqueio = TabelaConflitos.obterBloqueio(commit);
 
+                  bloqueio.data = wlj.data;
+                  
+                  bloqueio.data.propagarBloqueio(bloqueio);
+
                   BloqueiosAtivos.add(bloqueio);
             }
         }
@@ -295,6 +316,12 @@ class Protocolo2V2PL implements Protocolo {
     private void liberarBloqueios(Integer transaction){
         // liberar bloqueios da transação
 
+        // retira os intencionais
+        BloqueiosAtivos.stream()
+                       .filter(bloqueio  -> bloqueio.transaction == transaction)
+                       .forEach(bloqueio -> bloqueio.data.removerBloqueios(transaction));
+
+        // retira os bloqueios dos ativos
         BloqueiosAtivos.removeIf(bloqueio -> bloqueio.transaction == transaction);
 
         // Remove aresta do grafo wait for com essa transação
@@ -339,6 +366,22 @@ class Protocolo2V2PL implements Protocolo {
         }
     }
 
+    private void sincronizarBancosDeDados(Integer transaction){
+
+        Database DBCopia = datacopies.get(transaction);
+
+        for(Tabela tabela : DBCopia.tabelas){
+            for(Pagina pagina : tabela.paginas){
+                for(Registro registroCopia : pagina.registros){
+
+                    Registro original = database.buscarRegistro(registroCopia.nome);
+
+                    original.valor = registroCopia.valor;
+                }
+            }
+        }
+    }
+    
 
     //Detecção de deadlock
 

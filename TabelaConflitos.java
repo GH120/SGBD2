@@ -24,6 +24,16 @@ public class TabelaConflitos {
         return bloqueios.stream().allMatch(bloqueio -> podeConcederBloqueio(bloqueio, novaOperacao));
     }
 
+    public static boolean podeConcederBloqueio(
+        Bloqueio bloqueioNovo,
+        List<Bloqueio> bloqueios
+    ) {
+
+        if(bloqueios.size() == 0) return true;
+
+        return bloqueios.stream().allMatch(bloqueio -> podeConcederBloqueio(bloqueio.tipo, bloqueioNovo.tipo));
+    }
+
     // Sobrecarga para verificar compatibilidade entre um bloqueio existente e uma nova operação
     public static boolean podeConcederBloqueio(
         Bloqueio bloqueioExistente, 
@@ -34,16 +44,21 @@ public class TabelaConflitos {
 
         if(bloqueioExistente.transaction == novaOperacao.transaction) return true;
         
-        Data pai = bloqueioExistente.data.getPai();
-        
         Bloqueio novoBloqueio = obterBloqueio(novaOperacao);
 
         Boolean bloqueioPermitido =  podeConcederBloqueio(bloqueioExistente.tipo, novoBloqueio.tipo);
 
-        Boolean bloqueioPermitidoTodosPais = pai != null && podeConcederBloqueio(novaOperacao, pai.bloqueios);
+        Data pai = bloqueioExistente.data.getPai();
+
+        while(pai != null){
+
+            bloqueioPermitido = bloqueioPermitido && podeConcederBloqueio(novoBloqueio.intencional(), pai.bloqueios);
+
+            pai = pai.getPai();
+        }
 
         //Retorna se permitiu o bloqueio dele e de todos os seus ascendentes
-        return bloqueioPermitido && (pai == null || bloqueioPermitidoTodosPais);
+        return bloqueioPermitido;
     }
 
     // Método para verificar se dois tipos de bloqueio são compatíveis
