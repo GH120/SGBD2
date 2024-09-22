@@ -31,6 +31,8 @@ public class TabelaConflitos {
     ) {
 
         if(bloqueioExistente == null) return true;
+
+        if(bloqueioExistente.transaction == novaOperacao.transaction) return true;
         
         Data pai = bloqueioExistente.data.getPai();
         

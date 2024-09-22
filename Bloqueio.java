@@ -35,6 +35,8 @@ public class Bloqueio {
     // Retorna a versão intencional desse bloqueio para ser 
     public Bloqueio intencional(){
 
+        System.out.println(this.tipo);
+
         switch(this.tipo){
             case LEITURA:{
                 return new Bloqueio(type.INTENCIONAL_LEITURA, null, transaction);
@@ -46,7 +48,7 @@ public class Bloqueio {
                 return new Bloqueio(type.INTENCIONAL_CERTIFY, null, transaction);
             }
             default:{
-                return null;
+                return new Bloqueio(this.tipo, null, transaction);
             }
         }
     }

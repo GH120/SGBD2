@@ -212,7 +212,7 @@ public class Protocolo2V2PLTest {
         operacoes.add(new Write(1, registroX));  // W1(X) - Transação 1 escreve em X
         operacoes.add(new Read(1, registroY));   // R1(Y) - Transação 1 lê Y
         operacoes.add(new Read(2, registroX));   // R2(X) - Transação 2 lê X (antes do commit de T1)
-        operacoes.add(new Write(2, registroY));  // W2(Y) - Transação 2 escreve em Y
+        operacoes.add(new Write(2, registroY));  // W2(Y) - Transação 2 escreve em Y //Problema: não está sendo inserido
         operacoes.add(new Write(3, registroZ));  // W3(Z) - Transação 3 escreve em Z
         operacoes.add(new Commit(3));            // C3 - Transação 3 comita
         operacoes.add(new Read(1, registroZ));   // R1(Z) - Transação 1 lê Z

@@ -107,6 +107,8 @@ class Protocolo2V2PL implements Protocolo {
 
             BloqueiosAtivos.add(bloqueio);
 
+            registro.propagarBloqueio(bloqueio); //Cria os bloqueios intencionais 
+
             //Se a transação Tj possua wlj(x), executou wj(xn)
             Database copiaBD = datacopies.get(write.transaction);
 
@@ -154,6 +156,8 @@ class Protocolo2V2PL implements Protocolo {
             Bloqueio bloqueio = TabelaConflitos.obterBloqueio(read); //Talvez transformar em um setter dos registros
 
             BloqueiosAtivos.add(bloqueio);
+
+            registro.propagarBloqueio(bloqueio); //Cria os bloqueios intencionais
 
             //Verifica se pertence a transação com a cópia do banco de dados
 
