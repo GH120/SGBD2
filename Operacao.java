@@ -19,6 +19,15 @@ public abstract class Operacao{
         return this;
     }
 
+    public String getNome(){
+
+        String nome = tipoOperacao.name().charAt(0) + "" + transaction;
+
+        if(registro != null) nome = nome + "(" + registro.nome + ")";
+
+        return nome;
+    }
+
     // Propriedade para armazenar o tipo da operação
     public type tipoOperacao;
 

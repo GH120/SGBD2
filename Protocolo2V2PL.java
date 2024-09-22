@@ -98,6 +98,7 @@ class Protocolo2V2PL implements Protocolo {
                 }
                 else{
                     OperacoesRestantes.push(operacao);
+                    System.out.println("Operação " + operacao.getNome() + " espera T" + GrafoWaitFor.get(operacao.transaction));
                 }
             }
 
@@ -309,6 +310,8 @@ class Protocolo2V2PL implements Protocolo {
     private void escalonarOperacao(Operacao operacao){
         Escalonamento.add(operacao);
 
+        System.out.println("Operação " + operacao.getNome() + " escalonada");
+
         //Se for a primeira operação da transação a ser escalonada, adiciona ela na ordem das transações
         //Útil para saber quem a transação mais nova a ser abortada no deadlock
         if(!OrdemInsercaoTransacoes.contains(operacao.transaction)) 
@@ -414,15 +417,28 @@ class Protocolo2V2PL implements Protocolo {
 
         Database DBCopia = datacopies.get(transaction);
 
-        for(Tabela tabela : DBCopia.tabelas){
-            for(Pagina pagina : tabela.paginas){
-                for(Registro registroCopia : pagina.registros){
-
-                    Registro original = database.buscarRegistro(registroCopia.nome);
-
-                    original.valor = registroCopia.valor;
+        if(DBCopia != null){
+            
+            for(Tabela tabela : DBCopia.tabelas){
+                for(Pagina pagina : tabela.paginas){
+                    for(Registro registroCopia : pagina.registros){
+                        
+                        Registro original = database.buscarRegistro(registroCopia.nome);
+                        
+                        original.valor = registroCopia.valor;
+                    }
                 }
             }
+
+        }
+        else{
+
+            Boolean  apenasUpdates = Escalonamento.stream()
+                                              .filter(o -> o.transaction == transaction)
+                                              .allMatch(o -> !(o instanceof Write));
+
+            if(apenasUpdates) System.out.println("Apenas Updates, nenhuma sincronização");
+            else System.out.println("Erro na Sincronização");
         }
     }
     
