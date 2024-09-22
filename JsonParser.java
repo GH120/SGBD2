@@ -103,7 +103,8 @@ public class JsonParser {
             }
 
             for (Operacao op : operacoes) {
-                print("Transação: " + op.transaction + ", Registro: " + op.registro.nome + ", Operação: " + op.tipoOperacao + ", Escopo: " + op.escopoLock);
+                // print("Transação: " + op.transaction + ", Registro: " + op.registro.nome + ", Operação: " + op.tipoOperacao + ", Escopo: " + op.escopoLock);
+                print("Operação: " + op.getNome());
             }
     
             return operacoes;
