@@ -1,0 +1,41 @@
+{
+    "tabelas": [
+      {
+        "paginas": [
+          {
+            "registros": [
+              {
+                "nome": "Registro1",
+                "valor": 100
+              },
+              {
+                "nome": "Registro2",
+                "valor": 200
+              }
+            ]
+          },
+          {
+            "registros": [
+              {
+                "nome": "Registro3",
+                "valor": 300
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "paginas": [
+          {
+            "registros": [
+              {
+                "nome": "Registro4",
+                "valor": 400
+              }
+            ]
+          }
+        ]
+      }
+    ]
+}
+  
