@@ -27,6 +27,7 @@ class Protocolo2V2PL implements Protocolo {
     HashMap<Integer,Integer>  GrafoWaitFor;
     ArrayList<Integer>        OrdemInsercaoTransacoes = new ArrayList<>();
     ArrayList <Bloqueio>      BloqueiosAtivos;
+    Boolean                   pararExecucaoEmDeadlock = false;
 
     //Parte da database e cópias de versão do 2v2pl
     Database                  database;
@@ -70,6 +71,9 @@ class Protocolo2V2PL implements Protocolo {
                 else if(operacao instanceof Read   && rodarOperacao((Read)operacao)){
                     escalonarOperacao(operacao);
                 }
+                else if(operacao instanceof Update && rodarOperacao((Update)operacao)){
+                    escalonarOperacao(operacao);
+                }
                 else if(operacao instanceof Commit && rodarOperacao((Commit)operacao)){
 
                     escalonarOperacao(operacao);
@@ -94,6 +98,7 @@ class Protocolo2V2PL implements Protocolo {
                 }
                 else{
                     OperacoesRestantes.push(operacao);
+                    System.out.println("Operação " + operacao.getNome() + " espera T" + GrafoWaitFor.get(operacao.transaction));
                 }
             }
 
@@ -145,7 +150,7 @@ class Protocolo2V2PL implements Protocolo {
 
             bloqueios
             .stream()
-            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(Bloqueio.type.ESCRITA, bloqueio.tipo))
+            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(bloqueio, write))
             .forEach(bloqueioIncompativel -> {
 
                 //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
@@ -198,7 +203,7 @@ class Protocolo2V2PL implements Protocolo {
 
             bloqueios
             .stream()
-            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(Bloqueio.type.LEITURA, bloqueio.tipo))
+            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(bloqueio, read))
             .forEach(bloqueioIncompativel -> {
 
                 //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
@@ -214,6 +219,44 @@ class Protocolo2V2PL implements Protocolo {
         return false;
     }
 
+    private boolean rodarOperacao(Update update){
+
+        Registro registro = update.registro;
+
+        List<Bloqueio> bloqueios = BloqueiosAtivos.stream()
+                                                  .filter(b -> b.data.igual(registro))
+                                                  .toList();
+
+        if(TabelaConflitos.podeConcederBloqueio(update, bloqueios)){
+
+            Bloqueio bloqueio = TabelaConflitos.obterBloqueio(update); //Talvez transformar em um setter dos registros
+
+            BloqueiosAtivos.add(bloqueio);
+
+            registro.propagarBloqueio(bloqueio); //Cria os bloqueios intencionais 
+
+            //Escalona wj(xn) -> parte do 2v2PL
+            return true;
+        }
+        else{
+
+            bloqueios
+            .stream()
+            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(bloqueio, update))
+            .forEach(bloqueioIncompativel -> {
+
+                //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
+                Integer transaction = bloqueioIncompativel.getTransaction();
+                
+                //Senão botar transação em espera no grafo wait for 
+                GrafoWaitFor.put(update.transaction, transaction);
+
+            });
+
+            return false;
+        }
+
+    }
     //Caso de commit ou abort
     private boolean rodarOperacao(Commit commit){
 
@@ -249,7 +292,9 @@ class Protocolo2V2PL implements Protocolo {
                  //Concede o bloqueio clj(x)
                   Bloqueio bloqueio = TabelaConflitos.obterBloqueio(commit);
 
-                  bloqueio.data = wlj.data;
+                  bloqueio.data   = wlj.data;
+
+                  bloqueio.escopo = wlj.escopo;
                   
                   bloqueio.data.propagarBloqueio(bloqueio);
 
@@ -264,6 +309,8 @@ class Protocolo2V2PL implements Protocolo {
 
     private void escalonarOperacao(Operacao operacao){
         Escalonamento.add(operacao);
+
+        System.out.println("Operação " + operacao.getNome() + " escalonada");
 
         //Se for a primeira operação da transação a ser escalonada, adiciona ela na ordem das transações
         //Útil para saber quem a transação mais nova a ser abortada no deadlock
@@ -370,15 +417,28 @@ class Protocolo2V2PL implements Protocolo {
 
         Database DBCopia = datacopies.get(transaction);
 
-        for(Tabela tabela : DBCopia.tabelas){
-            for(Pagina pagina : tabela.paginas){
-                for(Registro registroCopia : pagina.registros){
-
-                    Registro original = database.buscarRegistro(registroCopia.nome);
-
-                    original.valor = registroCopia.valor;
+        if(DBCopia != null){
+            
+            for(Tabela tabela : DBCopia.tabelas){
+                for(Pagina pagina : tabela.paginas){
+                    for(Registro registroCopia : pagina.registros){
+                        
+                        Registro original = database.buscarRegistro(registroCopia.nome);
+                        
+                        original.valor = registroCopia.valor;
+                    }
                 }
             }
+
+        }
+        else{
+
+            Boolean  apenasUpdates = Escalonamento.stream()
+                                              .filter(o -> o.transaction == transaction)
+                                              .allMatch(o -> !(o instanceof Write));
+
+            if(apenasUpdates) System.out.println("Apenas Updates, nenhuma sincronização");
+            else System.out.println("Erro na Sincronização");
         }
     }
     

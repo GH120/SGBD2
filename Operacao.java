@@ -19,6 +19,15 @@ public abstract class Operacao{
         return this;
     }
 
+    public String getNome(){
+
+        String nome = tipoOperacao.name().charAt(0) + "" + transaction;
+
+        if(registro != null) nome = nome + "(" + registro.nome + ")";
+
+        return nome;
+    }
+
     // Propriedade para armazenar o tipo da operação
     public type tipoOperacao;
 
@@ -26,7 +35,7 @@ public abstract class Operacao{
     public enum type {
         READ,
         WRITE,
-        // UPDATE,
+        UPDATE,
         COMMIT,
         ABORT
     }
@@ -52,6 +61,14 @@ class Write extends Operacao {
     public Write(Integer transaction, Registro registro) {
         super(transaction, registro);
         tipoOperacao = type.WRITE;
+    }
+}
+
+class Update extends Operacao {
+    
+    public Update(Integer transaction, Registro registro) {
+        super(transaction, registro);
+        tipoOperacao = type.UPDATE;
     }
 }
 
