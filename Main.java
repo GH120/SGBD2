@@ -1,11 +1,18 @@
-import com.google.gson.Gson;
 import java.util.*;
 
 public class Main{
     public static void main(String[] args) {
-        Database database = Controle.createDatabase("resources/dbs/database1.json");
-        // System.out.println(database);
-        LinkedList<Operacao> ops = Controle.createOpsList("resources/ops/database1.json", database);
-        Controle.runEscalonamento(ops, database);
+
+        Controle controle = new Controle("resources/dbs/database1.json","resources/ops/database1.json");
+
+        String Operacoes = "w1(Registro1 with tablelock) r1(Registro1) u1(Registro2) c2 a3";
+
+        Database database = controle.createDatabase();
+        
+        controle.parserOperacoes(Operacoes); //Parser nas strings
+
+        LinkedList<Operacao> operacoes = controle.createOpsList();
+
+        controle.runEscalonamento(operacoes, database);
     }
 }
