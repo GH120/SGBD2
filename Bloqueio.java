@@ -13,12 +13,12 @@ public class Bloqueio {
     
     public Integer transaction;
 
-    public Registro registro;
+    public Data data;
 
     // Construtor
-    public Bloqueio(type tipoBloqueio, Registro data, Integer transaction) {
+    public Bloqueio(type tipoBloqueio, Data data, Integer transaction) {
         this.tipo = tipoBloqueio;
-        this.registro = data;
+        this.data = data;
         this.transaction = transaction;
     }
 

@@ -97,7 +97,9 @@ class Protocolo2V2PL implements Protocolo {
 
         Registro registro = write.registro;
 
-        List<Bloqueio> bloqueios = BloqueiosAtivos.stream().filter(b -> b.registro == registro).toList();
+        List<Bloqueio> bloqueios = BloqueiosAtivos.stream()
+                                                  .filter(b -> b.data.igual(registro))
+                                                  .toList();
 
         if(TabelaConflitos.podeConcederBloqueio(write, bloqueios)){
 
@@ -143,15 +145,15 @@ class Protocolo2V2PL implements Protocolo {
 
         Registro registro = read.registro;
 
-        List<Bloqueio> bloqueios = BloqueiosAtivos.stream().filter(b -> b.registro == registro).toList();
+        List<Bloqueio> bloqueios = BloqueiosAtivos.stream()
+                                                  .filter(b -> b.data.igual(registro))
+                                                  .toList();
 
         if(TabelaConflitos.podeConcederBloqueio(read, bloqueios)){
             
             Bloqueio bloqueio = TabelaConflitos.obterBloqueio(read); //Talvez transformar em um setter dos registros
 
             BloqueiosAtivos.add(bloqueio);
-
-            //Escalona wj(xn) -> parte do 2v2PL
 
             //Verifica se pertence a transação com a cópia do banco de dados
 
@@ -196,19 +198,21 @@ class Protocolo2V2PL implements Protocolo {
 
         //Todos os writelocks desse commit
         List<Bloqueio> writelock    = BloqueiosAtivos.stream()
-                                                     .filter(bloqueio -> bloqueio.tipo == Bloqueio.type.ESCRITA && 
-                                                                         bloqueio.transaction == commit.transaction)
+                                                     .filter(bloqueio -> bloqueio.tipo == Bloqueio.type.ESCRITA)
+                                                     .filter(bloqueio -> bloqueio.transaction == commit.transaction)
                                                      .toList();
 
         //Todos os readlocks existentes no BD
-        List<Bloqueio> readlock     = BloqueiosAtivos.stream().filter(bloqueio -> bloqueio.tipo == Bloqueio.type.LEITURA).toList();
+        List<Bloqueio> readlock     = BloqueiosAtivos.stream()
+                                                     .filter(bloqueio -> bloqueio.tipo == Bloqueio.type.LEITURA)
+                                                     .toList();
 
         //Tenta converter todos wlj em clj
         //Enquanto houver wlj(x) faça
         for(var wlj : writelock){
 
             Bloqueio rlk = readlock.stream()
-                                   .filter(rli -> rli.registro.nome == wlj.registro.nome && rli.transaction != wlj.transaction)
+                                   .filter(rli -> rli.data.igual(wlj.data) && rli.transaction != wlj.transaction)
                                    .findFirst()
                                    .orElse(null);
 

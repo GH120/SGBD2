@@ -5,13 +5,16 @@ import java.util.function.Predicate;
 
 abstract class Data {
 
-    public Data parentNode = null;
+    public Bloqueio bloqueio    = null;
 
     abstract boolean  temBloqueio(Operacao operacao);
     abstract boolean  propagarBloqueioIntencional(Bloqueio bloqueio);
-    abstract Data     buscar(Predicate<Data> filtro);
     abstract Registro buscarRegistro(String nome);
     abstract Data     clonar(); 
+    abstract Data     buscar(Predicate<Data> filtro);
+    abstract Data     getPai();
+    abstract void     setPai(Data data);
+    abstract boolean  igual (Data data);
 
     //Get parent node e set parent node?
 }
@@ -20,12 +23,9 @@ abstract class Data {
 abstract class Composite extends Data{
 
     private ArrayList<? extends Data> nodes; //nodes é uma maneira generalizada de chamar os filhos, se for database então seus filhos são tabelas, de tabelas páginas e assim em diante.
-    Bloqueio bloqueio; //Talvez transformar isso numa relação n para n
 
-    Composite(ArrayList<? extends Data> nodes, Data parentNode){
-
+    Composite(ArrayList<? extends Data> nodes){
         this.nodes      = nodes;
-        this.parentNode = parentNode;
     }
 
     public boolean temBloqueio(Operacao operacao) {
@@ -53,6 +53,20 @@ abstract class Composite extends Data{
 
         return (Registro) registro;
     }
+
+    //Extremamente ineficiente
+    public boolean igual(Data data){
+
+        Composite identico = (Composite) data;
+        
+        int i = 0;
+        for(Data node : identico.nodes){
+            if(!node.igual(this.nodes.get(i++))) 
+                return false;
+        }
+
+        return true;
+    }
 }
 
 //Composite é uma classe do padrão composite, útil para modelar a estrutura de árvore do BD
@@ -62,7 +76,7 @@ class Database extends Composite {
     ArrayList<Tabela> tabelas;
 
     public Database(ArrayList<Tabela> tabelas) {
-        super(tabelas, null);
+        super(tabelas);
         this.tabelas = tabelas;
     }
 
@@ -75,10 +89,18 @@ class Database extends Composite {
 
             copia.tabelas.add(cloneTabela);
 
-            cloneTabela.parentNode = copia;
+            cloneTabela.setPai(copia);
         }
 
         return copia;
+    }
+
+    public Data getPai(){
+        return null;
+    }
+
+    public void setPai(Data data){
+        return;
     }
 }
 
@@ -88,7 +110,7 @@ class Tabela extends Composite {
     Database        database;
 
     public Tabela(ArrayList<Pagina> paginas, Database database) {
-        super(paginas, database);
+        super(paginas);
         this.paginas = paginas;
         this.database = database;
     }
@@ -102,10 +124,18 @@ class Tabela extends Composite {
 
             copia.paginas.add(paginaClone);
 
-            paginaClone.parentNode = copia;
+            paginaClone.setPai(copia);
         }
 
         return copia;
+    }
+
+    public Data getPai(){
+        return database;
+    }
+
+    public void setPai(Data database){
+        this.database = (Database) database;
     }
 
 }
@@ -116,7 +146,7 @@ class Pagina extends Composite {
     Tabela          tabela;
 
     public Pagina(ArrayList<Registro> registros, Tabela tabela) {
-        super(registros, tabela);
+        super(registros);
         this.registros = registros;
         this.tabela    = tabela;
     }
@@ -130,10 +160,18 @@ class Pagina extends Composite {
 
             copia.registros.add(registroClone);
 
-            registroClone.parentNode = copia;
+            registroClone.setPai(copia);
         }
 
         return copia;
+    }
+
+    public Tabela getPai(){
+        return tabela;
+    }
+
+    public void setPai(Data tabela){
+        this.tabela = (Tabela) tabela;
     }
 
 }
@@ -142,13 +180,11 @@ class Registro extends Data {
     String   nome;
     Integer  valor;
     Pagina   pagina;
-    Bloqueio bloqueio; //Talvez transformar isso numa relação n para n
 
     public Registro(String nome, Integer valor, Pagina pagina) {
         this.nome       = nome;
         this.valor      = valor;
         this.pagina     = pagina;
-        this.parentNode = pagina;
     }
 
     public boolean temBloqueio(Operacao operacao) {
@@ -175,5 +211,20 @@ class Registro extends Data {
 
     public Registro clonar() {
         return new Registro(this.nome, this.valor, this.pagina); // Creates a new Registro with the same values
+    }
+
+    public boolean igual(Data data){
+
+        Registro registroIgual = (Registro) data;
+
+        return registroIgual.nome == nome;
+    }
+
+    public Pagina getPai(){
+        return pagina;
+    }
+
+    public void setPai(Data pagina){
+        this.pagina = (Pagina)pagina;
     }
 }

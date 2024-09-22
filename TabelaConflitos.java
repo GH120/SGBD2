@@ -14,12 +14,14 @@ public class TabelaConflitos {
         { false ,  false ,   false ,   true ,   true ,     true },  // INTENCIONAL_CERTIFY
     };
 
-    // Método para verificar se dois tipos de bloqueio são compatíveis
     public static boolean podeConcederBloqueio(
-        Bloqueio.type bloqueioAtual, 
-        Bloqueio.type novoBloqueio
+        Operacao novaOperacao,
+        List<Bloqueio> bloqueios
     ) {
-        return MATRIZ_CONFLITOS[bloqueioAtual.ordinal()][novoBloqueio.ordinal()];
+
+        if(bloqueios.size() == 0) return true;
+
+        return bloqueios.stream().allMatch(bloqueio -> podeConcederBloqueio(bloqueio, novaOperacao));
     }
 
     // Sobrecarga para verificar compatibilidade entre um bloqueio existente e uma nova operação
@@ -30,37 +32,24 @@ public class TabelaConflitos {
 
         if(bloqueioExistente == null) return true;
         
+        Data pai = bloqueioExistente.data.getPai();
+        
         Bloqueio novoBloqueio = obterBloqueio(novaOperacao);
 
-        return podeConcederBloqueio(
-            bloqueioExistente.tipo, 
-            novoBloqueio.tipo
-        );
+        Boolean bloqueioPermitido =  podeConcederBloqueio(bloqueioExistente.tipo, novoBloqueio.tipo);
+
+        Boolean bloqueioPermitidoTodosPais = pai != null && podeConcederBloqueio(pai.bloqueio, novaOperacao);
+
+        //Retorna se permitiu o bloqueio dele e de todos os seus ascendentes
+        return bloqueioPermitido && (pai == null || bloqueioPermitidoTodosPais);
     }
 
+    // Método para verificar se dois tipos de bloqueio são compatíveis
     public static boolean podeConcederBloqueio(
-        Operacao novaOperacao
+        Bloqueio.type bloqueioAtual, 
+        Bloqueio.type novoBloqueio
     ) {
-
-        Bloqueio bloqueioExistente = novaOperacao.registro.bloqueio;
-        Bloqueio novoBloqueio = obterBloqueio(novaOperacao);
-
-        if(bloqueioExistente == null) return true;
-
-        return podeConcederBloqueio(
-            bloqueioExistente.tipo, 
-            novoBloqueio.tipo
-        );
-    }
-
-    public static boolean podeConcederBloqueio(
-        Operacao novaOperacao,
-        List<Bloqueio> bloqueios
-    ) {
-
-        if(bloqueios.size() == 0) return true;
-
-        return bloqueios.stream().allMatch(bloqueio -> podeConcederBloqueio(bloqueio, novaOperacao));
+        return MATRIZ_CONFLITOS[bloqueioAtual.ordinal()][novoBloqueio.ordinal()];
     }
 
 
@@ -78,13 +67,5 @@ public class TabelaConflitos {
                 throw new IllegalArgumentException("Tipo de operação desconhecido.");
         }
 
-    }
-
-
-    // Testando
-    public static void main(String[] args) {
-        // Exemplo de uso
-        System.out.println(podeConcederBloqueio(Bloqueio.type.LEITURA, Bloqueio.type.ESCRITA)); // true
-        System.out.println(podeConcederBloqueio(Bloqueio.type.ESCRITA, Bloqueio.type.CERTIFY)); // false
     }
 }
