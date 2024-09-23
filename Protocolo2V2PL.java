@@ -109,9 +109,10 @@ class Protocolo2V2PL implements Protocolo {
                     });
                 }
                 else if(operacao instanceof Abort){
-                    escalonarOperacao(operacao);
-
+                    
                     abortarTransaction(operacao.transaction);
+
+                    escalonarOperacao(operacao);
                 }
                 else{
                     OperacoesRestantes.push(operacao);

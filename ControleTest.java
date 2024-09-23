@@ -23,10 +23,22 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database1.json", "resources/ops/database1.json");
 
         // Teste com operações de commit e abort
-        String resultado = controle.runEscalonamento("w1(Registro1) w2(Registro3 with pagelock) r3(Registro3) r2(Registro3) w3(Registro3) c1 a3");
+        String resultado = controle.runEscalonamento("w1(Registro1) w2(Registro3 with pagelock) r3(Registro3) r3(Registro1) r2(Registro3) w3(Registro1) a3 c1 ");
         
         // Verificar se o escalonamento foi bem-sucedido
-        // Assert.assertTrue(resultado.equals("W2(Registro3)R2(Registro3)C2"));
+        Assert.assertTrue(resultado.equals("W1(Registro1)W2(Registro3)R2(Registro3)A3C1"));
+    }
+
+    @Test
+    public void testCommitAbort2() throws IOException {
+        // Inicializa o controle com o caminho para a base de dados e operações
+        Controle controle = new Controle("resources/dbs/database1.json", "resources/ops/database1.json");
+
+        // Teste com operações de commit e abort
+        String resultado = controle.runEscalonamento("w1(Registro1) w2(Registro3 with pagelock) r3(Registro3) r3(Registro1) r2(Registro3) w3(Registro1) a2 c1 ");
+        
+        // Verificar se o escalonamento foi bem-sucedido
+        Assert.assertTrue(resultado.equals("W1(Registro1)A2C1"));
     }
 
     @Test
