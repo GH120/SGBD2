@@ -71,7 +71,7 @@ class Protocolo2V2PL implements Protocolo {
             Boolean  TransacaoEsperandoOutra = GrafoWaitFor.keySet().contains(operacao.transaction);
 
             //Verifica se está no grafo waitfor, esperando liberar outra transação, se estiver skippa
-            if(TransacaoEsperandoOutra){
+            if(TransacaoEsperandoOutra && !(operacao instanceof Abort)){
                 OperacoesRestantes.add(operacao);
 
                 // if(commitsInexistentes()) return;
