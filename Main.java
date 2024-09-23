@@ -21,7 +21,7 @@ public class Main{
         //ALGORITMO NO ARQUIVO PROTOCOLO2V2PL, MÉTODO RODAR(LikedList<Operacoes> OperacoesEmOrdemCronologica)
 
         //Escolhe a database e o arquivo onde vão ser inseridos o parsing das operações
-        Controle controle = new Controle("resources/dbs/database1.json","resources/ops/database1.json");
+        Controle controle = new Controle("resources/dbs/database2.json","resources/ops/database1.json");
 
         //Exemplos de Entradas e Saídas
         //Transações abortadas retiram operações do escalonamento final
