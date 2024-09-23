@@ -201,6 +201,9 @@ public class JsonParser {
                     case COMMIT:
                         operacao = new Commit(transaction);
                         break;
+                    case UPDATE:
+                        operacao = new Update(transaction, registro);
+                        break;
                     case ABORT:
                         operacao = new Abort(transaction);
                         break;

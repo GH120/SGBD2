@@ -37,8 +37,7 @@ public class ControleTest {
         // Teste com múltiplas transações
         controle.runEscalonamento("w1(Registro1) r2(Registro1) u1(Registro2) w2(Registro3) c1 c2");
         
-        // Verificar se o escalonamento foi bem-sucedido
-        System.out.println("Múltiplas transações escalonadas com sucesso.");
+        // Assert.assertTrue(resultado.equals("W1(Registro1)R1(Registro2)C1"));
     }
 
     @Test
@@ -47,10 +46,9 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database1.json", "resources/ops/database1.json");
 
         // Teste com operações que podem gerar deadlock
-        controle.runEscalonamento("w1(Registro1 with tablelock) r2(Registro1) w2(Registro2 with tablelock) r1(Registro2) c1 c2");
-        
-        // Verificar se o escalonamento foi bem-sucedido
-        System.out.println("Deadlock test concluído com sucesso.");
+        String resultado = controle.runEscalonamento("w1(Registro1 with tablelock) r2(Registro1) w2(Registro2 with tablelock) r1(Registro2) c1 c2");
+
+        Assert.assertTrue(resultado.equals("W1(Registro1)R1(Registro2)C1"));
     }
 
     @Test
@@ -108,6 +106,18 @@ public class ControleTest {
         String resultado = controle.runEscalonamento("r1(X with pagelock) w1(Y) r2(X with pagelock) c1 w2(Z) r3(Z) c2 w3(Y) c3");
         
         // Verificar se o escalonamento foi bem-sucedido
-        // Assert.assertTrue(resultado.equals("W1(X)C1W2(Z)C2"));
+        Assert.assertTrue(resultado.equals("R1(X)W1(Y)R2(X)W2(Z)C2C1"));
+    }
+
+    @Test
+    public void testBloqueioPaginaTabela3() throws IOException {
+        // Inicializa o controle com o caminho para a base de dados e operações
+        Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
+
+        // Deve funcionar pois estão em páginas diferentes
+        String resultado = controle.runEscalonamento("r1(X with pagelock) w1(Y) r2(X with pagelock) c1 w2(Z) r3(Z) c2 w3(Y) c3");
+        
+        // Verificar se o escalonamento foi bem-sucedido
+        Assert.assertTrue(resultado.equals("R1(X)W1(Y)R2(X)W2(Z)C2C1"));
     }
 }

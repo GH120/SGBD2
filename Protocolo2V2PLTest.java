@@ -401,24 +401,18 @@ public class Protocolo2V2PLTest {
         Assert.assertEquals(6, protocolo.Escalonamento.size());
         Assert.assertTrue(protocolo.Escalonamento.get(0) instanceof Read);
         Assert.assertTrue(protocolo.Escalonamento.get(1) instanceof Write);
-        Assert.assertTrue(protocolo.Escalonamento.get(2) instanceof Commit);
-        Assert.assertTrue(protocolo.Escalonamento.get(3) instanceof Read);
-        Assert.assertTrue(protocolo.Escalonamento.get(4) instanceof Write);
+        Assert.assertTrue(protocolo.Escalonamento.get(2) instanceof Read);
+        Assert.assertTrue(protocolo.Escalonamento.get(3) instanceof Write);
+        Assert.assertTrue(protocolo.Escalonamento.get(4) instanceof Commit);
         Assert.assertTrue(protocolo.Escalonamento.get(5) instanceof Commit);
-        Assert.assertTrue(protocolo.Escalonamento.get(6) instanceof Read);
-        Assert.assertTrue(protocolo.Escalonamento.get(7) instanceof Write);
-        Assert.assertTrue(protocolo.Escalonamento.get(8) instanceof Commit);
 
         // Verificar a ordem das operações escalonadas
         Assert.assertTrue(1 == protocolo.Escalonamento.get(0).transaction);
         Assert.assertTrue(1 == protocolo.Escalonamento.get(1).transaction);
-        Assert.assertTrue(1 == protocolo.Escalonamento.get(2).transaction);
+        Assert.assertTrue(2 == protocolo.Escalonamento.get(2).transaction);
         Assert.assertTrue(2 == protocolo.Escalonamento.get(3).transaction);
         Assert.assertTrue(2 == protocolo.Escalonamento.get(4).transaction);
-        Assert.assertTrue(2 == protocolo.Escalonamento.get(5).transaction);
-        Assert.assertTrue(3 == protocolo.Escalonamento.get(6).transaction);
-        Assert.assertTrue(3 == protocolo.Escalonamento.get(7).transaction);
-        Assert.assertTrue(3 == protocolo.Escalonamento.get(8).transaction);
+        Assert.assertTrue(1 == protocolo.Escalonamento.get(5).transaction);
 
     }
 

@@ -61,8 +61,7 @@ class Protocolo2V2PL implements Protocolo {
 
         OperacoesEmOrdemCronologica = scheduleRecebido;
 
-        int i = 0;
-        while(i < 100000){
+        for(int i = 0; i < 10000; i++){
 
             //Retoma as transações que forem paradas
             retomarTransacoesParadas();
@@ -132,12 +131,12 @@ class Protocolo2V2PL implements Protocolo {
 
                 if(OperacoesRestantes.isEmpty()) return; //Caso de parada, terminou execução
 
-                OperacoesEmOrdemCronologica = new LinkedList<>(OperacoesRestantes);
+                //Retoma as transações que forem paradas
+                retomarTransacoesParadas();
 
-                OperacoesRestantes.clear();
+                if(OperacoesEmOrdemCronologica.isEmpty()) return; //Se não houver nenhuma transação retomada
 
-                Collections.reverse(OperacoesEmOrdemCronologica); //Pop agora funciona no início
-
+                // Collections.reverse(OperacoesEmOrdemCronologica); //Pop agora funciona no início
             }
 
         }
@@ -414,7 +413,12 @@ class Protocolo2V2PL implements Protocolo {
 
     private void retomarTransacoesParadas(){
 
-        Iterator<Integer> iterator = TransacoesEsperando.iterator();
+        //Reverte pois o pop tem que começar da transação mais recente
+        ArrayList<Integer> TransacoesEsperandoInvertidas = new ArrayList<>(TransacoesEsperando);
+
+        Collections.reverse(TransacoesEsperandoInvertidas);
+
+        Iterator<Integer> iterator = TransacoesEsperandoInvertidas.iterator();
 
         //Pega todas as transações em espera e coloca elas na ordem cronológica
         while(iterator.hasNext()){
@@ -448,7 +452,8 @@ class Protocolo2V2PL implements Protocolo {
         abortarTransaction(transacaoAbortada);
 
         //Tenta realizar a operação de novo se não for a transação abortada
-        if(transacaoAbortada != transaction) 
+        //Refatorar depois
+        if(transacaoAbortada != transaction && !OperacoesRestantes.contains(operacao)) 
             OperacoesRestantes.add(operacao);
 
         return false;
