@@ -71,13 +71,8 @@ class Protocolo2V2PL implements Protocolo {
 
             Boolean  TransacaoEsperandoOutra = GrafoWaitFor.keySet().contains(operacao.transaction);
 
-            //DETECÇÃO DE DEADLOCKS//
-            if(detectarDeadlock()) {
-                solucionarDeadlock(operacao);
-            }
-
             //Verifica se está no grafo waitfor, esperando liberar outra transação, se estiver skippa
-            else if(TransacaoEsperandoOutra){
+            if(TransacaoEsperandoOutra){
                 OperacoesRestantes.add(operacao);
 
                 // if(commitsInexistentes()) return;
@@ -123,6 +118,11 @@ class Protocolo2V2PL implements Protocolo {
                     OperacoesRestantes.push(operacao);
                     System.out.println("Operação " + operacao.getNome() + " espera T" + GrafoWaitFor.get(operacao.transaction));
                 }
+            }
+
+            //DETECÇÃO DE DEADLOCKS//
+            if(detectarDeadlock()) {
+                solucionarDeadlock(operacao);
             }
 
             //Se terminar as operações em ordem cronológica, 
@@ -441,6 +441,7 @@ class Protocolo2V2PL implements Protocolo {
         // Retirar todas as Operações da Transação
         OperacoesRestantes         .removeIf(operacao -> operacao.transaction == transaction);
         OperacoesEmOrdemCronologica.removeIf(operacao -> operacao.transaction == transaction);
+        Escalonamento.removeIf(operacao -> operacao.transaction == transaction);
 
         System.out.println("Transação " + transaction + " abortada");
 
