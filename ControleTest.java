@@ -1,5 +1,6 @@
 import java.io.IOException;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 public class ControleTest {
@@ -46,7 +47,7 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database1.json", "resources/ops/database1.json");
 
         // Teste com operações que podem gerar deadlock
-        controle.runEscalonamento("w1(Registro1 with tablelock) r2(Registro1) w2(Registro2 with tablelock) r1(Registro2)");
+        controle.runEscalonamento("w1(Registro1 with tablelock) r2(Registro1) w2(Registro2 with tablelock) r1(Registro2) c1 c2");
         
         // Verificar se o escalonamento foi bem-sucedido
         System.out.println("Deadlock test concluído com sucesso.");
@@ -58,10 +59,9 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database1.json", "resources/ops/database1.json");
 
         // Teste com operações sem especificar locks (deve assumir rowlock por padrão)
-        controle.runEscalonamento("w1(Registro1) r1(Registro2) u2(Registro3)");
+        String resultado = controle.runEscalonamento("w1(Registro1) r1(Registro2) u2(Registro3)");
         
-        // Verificar se o escalonamento foi bem-sucedido
-        System.out.println("Operações sem locks especificados escalonadas com sucesso.");
+        Assert.assertTrue(resultado.equals("W1(Registro1)R1(Registro2)U2(Registro3)"));
     }
 
     @Test
@@ -70,10 +70,9 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
 
         // W2 deve esperar w1 pois estão na mesma tabela
-        controle.runEscalonamento("w1(X with tablelock) w2(Z) c1 c2");
-        
-        // Verificar se o escalonamento foi bem-sucedido
-        System.out.println("Operações sem locks especificados escalonadas com sucesso.");
+        String resultado = controle.runEscalonamento("w1(X with tablelock) w2(Z) c1 c2");
+
+        Assert.assertTrue(resultado.equals("W1(X)C1W2(Z)C2"));
     }
 
     @Test
@@ -82,10 +81,10 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
 
         // Deve funcionar pois estão em páginas diferentes
-        controle.runEscalonamento("w1(X with pagelock) w2(Z) c1 c2");
+        String resultado = controle.runEscalonamento("w1(X with pagelock) w2(Z) c1 c2");
         
         // Verificar se o escalonamento foi bem-sucedido
-        System.out.println("Operações sem locks especificados escalonadas com sucesso.");
+        Assert.assertTrue(resultado.equals("W1(X)W2(Z)C1C2"));
     }
 
     @Test
@@ -94,9 +93,9 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
 
         // Deve funcionar pois estão em páginas diferentes
-        controle.runEscalonamento("w1(X with pagelock) w2(Z with tablelock) c1 c2");
+        String resultado = controle.runEscalonamento("w1(X with pagelock) w2(Z with tablelock) c1 c2");
         
         // Verificar se o escalonamento foi bem-sucedido
-        System.out.println("Operações sem locks especificados escalonadas com sucesso.");
+        Assert.assertTrue(resultado.equals("W1(X)C1W2(Z)C2"));
     }
 }

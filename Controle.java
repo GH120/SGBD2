@@ -38,7 +38,7 @@ public class Controle {
         return operacoes;
     }
 
-    public void runEscalonamento(String string) {
+    public String runEscalonamento(String string) {
 
         Database database = this.createDatabase();
         
@@ -50,6 +50,12 @@ public class Controle {
         protocolo.database = database;
         protocolo.rodar(operacoes);
         protocolo.Escalonamento.forEach(x -> System.out.print(x.getNome()));
+
+        String concatenacaoNomes = protocolo.Escalonamento.stream()
+                                                          .map(Operacao::getNome) // Obtém o nome de cada operação
+                                                          .reduce("", (x, y) -> x.concat(y)); // Concatena os nomes
+
+        return concatenacaoNomes;
     }
 
     public void compilarOperacoes(String operacoesEscritas){

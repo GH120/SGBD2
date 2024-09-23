@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -26,6 +27,7 @@ class Protocolo2V2PL implements Protocolo {
     //Detecção de conflitos -> grafo de serialização
     //Detecção de deadlock -> grafo de wait-for
     HashMap<Integer,Integer>  GrafoWaitFor;
+    ArrayList<Integer>        TransacoesEsperando;
     ArrayList<Integer>        OrdemInsercaoTransacoes;
     ArrayList <Bloqueio>      BloqueiosAtivos;
     Boolean                   pararExecucaoEmDeadlock = false;
@@ -44,6 +46,7 @@ class Protocolo2V2PL implements Protocolo {
         this.datacopies = new HashMap<>();                 // Inicializa o mapa de cópias da database
         this.OperacoesEmOrdemCronologica = new LinkedList<>(); // Inicializa a lista de operações cronológicas
         this.OrdemInsercaoTransacoes = new ArrayList<>();  // Inicializa a lista de transações em ordem de inserção
+        this.TransacoesEsperando  = new ArrayList<>();
     }
     
     
@@ -58,7 +61,11 @@ class Protocolo2V2PL implements Protocolo {
 
         OperacoesEmOrdemCronologica = scheduleRecebido;
 
-        while(!OperacoesEmOrdemCronologica.isEmpty()){
+        int i = 0;
+        while(i < 100000){
+
+            //Retoma as transações que forem paradas
+            retomarTransacoesParadas();
 
             Operacao operacao = OperacoesEmOrdemCronologica.pop();
 
@@ -72,9 +79,11 @@ class Protocolo2V2PL implements Protocolo {
             //Verifica se está no grafo waitfor, esperando liberar outra transação, se estiver skippa
             else if(TransacaoEsperandoOutra){
                 OperacoesRestantes.add(operacao);
-                System.out.println("Tamanho: " + OperacoesRestantes.size() + "outro: " + OperacoesEmOrdemCronologica.size());
-            }
 
+                // if(commitsInexistentes()) return;
+
+                // System.out.println("Tamanho: " + OperacoesRestantes.size() + "outro: " + OperacoesEmOrdemCronologica.size());
+            }
             //TRATATAMENTO DE OPERAÇÕES//
             else{
 
@@ -120,12 +129,20 @@ class Protocolo2V2PL implements Protocolo {
             //mas ainda houver operações em espera,
             //Então elas vão ser as novas operações em ordem cronológica
             if(OperacoesEmOrdemCronologica.isEmpty()){
-                OperacoesEmOrdemCronologica = OperacoesRestantes;
+
+                if(OperacoesRestantes.isEmpty()) return; //Caso de parada, terminou execução
+
+                OperacoesEmOrdemCronologica = new LinkedList<>(OperacoesRestantes);
+
+                OperacoesRestantes.clear();
 
                 Collections.reverse(OperacoesEmOrdemCronologica); //Pop agora funciona no início
+
             }
 
         }
+
+        System.out.println("Loop Eterno");
 
     }
 
@@ -162,7 +179,15 @@ class Protocolo2V2PL implements Protocolo {
         }
         else{
 
-            bloqueios
+            ArrayList<Bloqueio> todosBloqueios = new ArrayList<Bloqueio>(bloqueios);
+
+            //Intencionais e sobre tabelas
+            todosBloqueios.addAll(write.registro.bloqueios);
+            todosBloqueios.addAll(write.registro.pagina.bloqueios);
+            todosBloqueios.addAll(write.registro.pagina.tabela.bloqueios);
+            todosBloqueios.addAll(database.bloqueios);
+
+            todosBloqueios
             .stream()
             .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(bloqueio, write))
             .forEach(bloqueioIncompativel -> {
@@ -173,6 +198,9 @@ class Protocolo2V2PL implements Protocolo {
                 //Senão botar transação em espera no grafo wait for 
                 GrafoWaitFor.put(write.transaction, transaction);
 
+                if(!TransacoesEsperando.contains(transaction)) TransacoesEsperando.add(write.transaction);
+
+                //Coloca ela como transação em standby
             });
         }
 
@@ -215,9 +243,14 @@ class Protocolo2V2PL implements Protocolo {
         }
         else{
 
-            bloqueios
-            .stream()
-            .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(bloqueio, read))
+            ArrayList<Bloqueio> todosBloqueios = new ArrayList<Bloqueio>(bloqueios);
+
+            todosBloqueios.addAll(read.registro.bloqueios);
+            todosBloqueios.addAll(read.registro.pagina.bloqueios);
+            todosBloqueios.addAll(read.registro.pagina.tabela.bloqueios);
+            todosBloqueios.addAll(database.bloqueios);
+
+            todosBloqueios
             .forEach(bloqueioIncompativel -> {
 
                 //Se ele tiver, ou ele é compartilhado usando a tabela de liberação de bloqueios ou não existe
@@ -225,6 +258,8 @@ class Protocolo2V2PL implements Protocolo {
                 
                 //Senão botar transação em espera no grafo wait for 
                 GrafoWaitFor.put(read.transaction, transaction);
+
+                if(!TransacoesEsperando.contains(transaction)) TransacoesEsperando.add(read.transaction);
 
             });
         }
@@ -253,8 +288,17 @@ class Protocolo2V2PL implements Protocolo {
             return true;
         }
         else{
+            //Refatorar depois
+            ArrayList<Bloqueio> todosBloqueios = new ArrayList<Bloqueio>(bloqueios);
 
-            bloqueios
+            //Bloqueios intencionais e concretos dos ascendentes
+            todosBloqueios.addAll(update.registro.bloqueios);
+            todosBloqueios.addAll(update.registro.pagina.bloqueios);
+            todosBloqueios.addAll(update.registro.pagina.tabela.bloqueios);
+            todosBloqueios.addAll(database.bloqueios);
+
+            //Vê qual deles causou o problema
+            todosBloqueios
             .stream()
             .filter(bloqueio -> !TabelaConflitos.podeConcederBloqueio(bloqueio, update))
             .forEach(bloqueioIncompativel -> {
@@ -264,6 +308,9 @@ class Protocolo2V2PL implements Protocolo {
                 
                 //Senão botar transação em espera no grafo wait for 
                 GrafoWaitFor.put(update.transaction, transaction);
+
+                if(!TransacoesEsperando.contains(transaction)) TransacoesEsperando.add(update.transaction);
+
 
             });
 
@@ -299,6 +346,8 @@ class Protocolo2V2PL implements Protocolo {
                 //Aguarda a concessão de clj(x)
                 GrafoWaitFor.put(commit.transaction, rlk.transaction);
 
+                if(!TransacoesEsperando.contains(commit.transaction)) TransacoesEsperando.add(commit.transaction);
+
                 return false;
             }
 
@@ -333,6 +382,29 @@ class Protocolo2V2PL implements Protocolo {
     }
 
     //Lógica de solicitar bloqueio, solucionar conflito, resolver deadlock...
+
+
+    private void retomarTransacoesParadas(){
+
+        Iterator<Integer> iterator = TransacoesEsperando.iterator();
+
+        //Pega todas as transações em espera e coloca elas na ordem cronológica
+        while(iterator.hasNext()){
+
+            Integer transaction = iterator.next();
+
+            Boolean transactionAtiva = !GrafoWaitFor.keySet().contains(transaction);
+
+            if(transactionAtiva){
+                OperacoesRestantes.stream()
+                                  .filter(o -> o.transaction == transaction)
+                                  .forEach(o -> OperacoesEmOrdemCronologica.push(o));
+                OperacoesRestantes.removeIf(o -> o.transaction == transaction);
+
+                iterator.remove();
+            }
+        }
+    }
 
     private boolean solucionarDeadlock(Operacao operacao){
 
@@ -487,6 +559,21 @@ class Protocolo2V2PL implements Protocolo {
         visitados.put(transacaoAtual, false); // Marca como processado
         return false;
     }
+
+    // //Se não foram inseridos commits como operações
+    // private void tratarCommitsInexistentes(){
+
+    //     //Para todas as operações restantes, supondo que são todas as que faltam
+    //     //Se houver alguma operação sem commit que esteja causando um deadlock
+    //     for(Operacao operacao : OperacoesRestantes){
+
+           
+
+    //         if(semCommits) return true;
+    //     }
+
+    //     return false;
+    // }
 }
 
 //Implementar uma classe tabela de conflitos para os bloqueios
