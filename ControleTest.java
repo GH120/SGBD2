@@ -98,4 +98,16 @@ public class ControleTest {
         // Verificar se o escalonamento foi bem-sucedido
         Assert.assertTrue(resultado.equals("W1(X)C1W2(Z)C2"));
     }
+
+    @Test
+    public void testBloqueioPaginaTabela2() throws IOException {
+        // Inicializa o controle com o caminho para a base de dados e operações
+        Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
+
+        // Deve funcionar pois estão em páginas diferentes
+        String resultado = controle.runEscalonamento("r1(X with pagelock) w1(Y) r2(X with pagelock) c1 w2(Z) r3(Z) c2 w3(Y) c3");
+        
+        // Verificar se o escalonamento foi bem-sucedido
+        // Assert.assertTrue(resultado.equals("W1(X)C1W2(Z)C2"));
+    }
 }

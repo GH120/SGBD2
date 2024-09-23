@@ -336,10 +336,38 @@ class Protocolo2V2PL implements Protocolo {
         //Enquanto houver wlj(x) faça
         for(var wlj : writelock){
 
-            Bloqueio rlk = readlock.stream()
-                                   .filter(rli -> rli.data.igual(wlj.data) && rli.transaction != wlj.transaction)
-                                   .findFirst()
-                                   .orElse(null);
+            Bloqueio rlk = null;
+
+            //Maior gambiarra de todos os tempos
+            //Poderia refatorar em um loop while usando bloqueios no escopo
+            for(Bloqueio read : readlock){
+                if(read.transaction == wlj.transaction) continue;
+
+                boolean registroIgual = read.data.igual(wlj.data);
+                boolean paginaIgual   = read.data.getPai().equals(wlj.data.getPai());
+                boolean tabelaIgual   = read.data.getPai().getPai().equals(wlj.data.getPai().getPai());
+
+                if(read.escopo == Operacao.lock.rowlock){
+                    if(registroIgual){
+                        rlk = read; 
+                        break;
+                    }
+                }
+
+                if(read.escopo == Operacao.lock.pagelock){
+                    if(registroIgual || paginaIgual){
+                        rlk = read; 
+                        break;
+                    }
+                }
+
+                if(read.escopo == Operacao.lock.tablelock){
+                    if(registroIgual || paginaIgual || tabelaIgual){
+                        rlk = read; 
+                        break;
+                    }
+                }
+            }
 
             //Se existir rlk(x), com 0<K<=n, k != j
             if(rlk != null){
