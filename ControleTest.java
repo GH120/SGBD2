@@ -80,9 +80,9 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
 
         // W2 deve esperar w1 pois estão na mesma tabela
-        String resultado = controle.runEscalonamento("w1(X with tablelock) w2(Z) c1 c2");
+        String resultado = controle.runEscalonamento("w1(x with tablelock) w2(z) c1 c2");
 
-        Assert.assertTrue(resultado.equals("W1(X)C1W2(Z)C2"));
+        Assert.assertTrue(resultado.equals("W1(x)C1W2(z)C2"));
     }
 
     @Test
@@ -91,10 +91,10 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
 
         // Deve funcionar pois estão em páginas diferentes
-        String resultado = controle.runEscalonamento("w1(X with pagelock) w2(Z) c1 c2");
+        String resultado = controle.runEscalonamento("w1(x with pagelock) w2(z) c1 c2");
         
         // Verificar se o escalonamento foi bem-sucedido
-        Assert.assertTrue(resultado.equals("W1(X)W2(Z)C1C2"));
+        Assert.assertTrue(resultado.equals("W1(x)W2(z)C1C2"));
     }
 
     @Test
@@ -103,10 +103,10 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
 
         // Deve funcionar pois estão em páginas diferentes
-        String resultado = controle.runEscalonamento("w1(X with pagelock) w2(Z with tablelock) c1 c2");
+        String resultado = controle.runEscalonamento("w1(x with pagelock) w2(z with tablelock) c1 c2");
         
         // Verificar se o escalonamento foi bem-sucedido
-        Assert.assertTrue(resultado.equals("W1(X)C1W2(Z)C2"));
+        Assert.assertTrue(resultado.equals("W1(x)C1W2(z)C2"));
     }
 
     @Test
@@ -115,10 +115,10 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
 
         // Deve funcionar pois estão em páginas diferentes
-        String resultado = controle.runEscalonamento("r1(X with pagelock) w1(Y) r2(X with pagelock) c1 w2(Z) r3(Z) c2 w3(Y) c3");
+        String resultado = controle.runEscalonamento("r1(x with pagelock) w1(y) r2(x with pagelock) c1 w2(z) r3(z) c2 w3(y) c3");
         
         // Verificar se o escalonamento foi bem-sucedido
-        Assert.assertTrue(resultado.equals("R1(X)W1(Y)R2(X)W2(Z)C2C1"));
+        Assert.assertTrue(resultado.equals("R1(x)W1(y)R2(x)W2(z)C2C1"));
     }
 
     @Test
@@ -127,9 +127,21 @@ public class ControleTest {
         Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
 
         // Deve funcionar pois estão em páginas diferentes
-        String resultado = controle.runEscalonamento("r1(X with pagelock) w1(Y) r2(X with pagelock) c1 w2(Z) r3(Z) c2 w3(Y) c3");
+        String resultado = controle.runEscalonamento("r1(x with pagelock) w1(y) r2(x with pagelock) c1 w2(z) r3(z) c2 w3(y) c3");
         
         // Verificar se o escalonamento foi bem-sucedido
-        Assert.assertTrue(resultado.equals("R1(X)W1(Y)R2(X)W2(Z)C2C1"));
+        Assert.assertTrue(resultado.equals("R1(x)W1(y)R2(x)W2(z)C2C1"));
+    }
+
+    @Test
+    public void testBloqueioPaginaTabela4() throws IOException {
+        // Inicializa o controle com o caminho para a base de dados e operações
+        Controle controle = new Controle("resources/dbs/database2.json", "resources/ops/database1.json");
+
+        // Deve funcionar pois estão em páginas diferentes
+        String resultado = controle.runEscalonamento("r1(x) r2(x) w1(x) r1(z) c1 w2(y) r3(y) c2 w3(z) c3");
+        
+        // Verificar se o escalonamento foi bem-sucedido
+        // Assert.assertTrue(resultado.equals("R1(x)W1(y)R2(x)W2(z)C2C1"));
     }
 }

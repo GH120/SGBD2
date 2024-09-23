@@ -5,11 +5,11 @@
           {
             "registros": [
               {
-                "nome": "X",
+                "nome": "x",
                 "valor": 100
               },
               {
-                "nome": "Y",
+                "nome": "y",
                 "valor": 200
               }
             ]
@@ -17,7 +17,7 @@
           {
             "registros": [
               {
-                "nome": "Z",
+                "nome": "z",
                 "valor": 300
               }
             ]
