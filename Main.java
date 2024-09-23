@@ -13,9 +13,14 @@ import java.util.*;
 
 //Github: https://github.com/GH120/SGBD2
 
+//ALGORITMO NO ARQUIVO PROTOCOLO2V2PL, MÉTODO RODAR(LikedList<Operacoes> OperacoesEmOrdemCronologica)
+
 public class Main{
     public static void main(String[] args) {
 
+        //ALGORITMO NO ARQUIVO PROTOCOLO2V2PL, MÉTODO RODAR(LikedList<Operacoes> OperacoesEmOrdemCronologica)
+
+        //Escolhe a database e o arquivo onde vão ser inseridos o parsing das operações
         Controle controle = new Controle("resources/dbs/database1.json","resources/ops/database1.json");
 
         //Exemplos de Entradas e Saídas
